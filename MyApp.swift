@@ -1,10 +1,11 @@
 import SwiftUI
 
+// Entry Point
 @main
-struct MyApp: App {
+struct SmokeFreeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            WelcomeView()
         }
     }
 }
