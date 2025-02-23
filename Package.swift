@@ -17,6 +17,7 @@ let package = Package(
             name: "AntiSmokingWWDC",
             targets: ["AppModule"],
             bundleIdentifier: "com.Antismoking.AntiSmokingWWDC",
+            teamIdentifier: "HN837W3RNR",
             displayVersion: "1.0",
             bundleVersion: "1",
             appIcon: .placeholder(icon: .cloud),
