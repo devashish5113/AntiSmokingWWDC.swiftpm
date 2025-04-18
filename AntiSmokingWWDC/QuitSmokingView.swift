@@ -65,24 +65,24 @@ struct QuitSmokingView: View {
     @State private var selectedTab = 0
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // Journey Progress
+                VStack(spacing: 25) {
                     JourneyProgressView(tracker: tracker)
-                        .padding(.top)
+                        .padding(.top, 10)
                     
-                    // Add Data Button
                     AddDataButton(showingAddRecord: $showingAddRecord)
                     
-                    // Tab View
                     CustomTabView(selectedTab: $selectedTab, tracker: tracker)
                 }
             }
-            .navigationTitle("Quit Smoking Journey")
+            .navigationTitle("Quit Smoking")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showingAddRecord) {
                 AddHealthRecordView(tracker: tracker, isPresented: $showingAddRecord)
             }
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 }
@@ -111,25 +111,69 @@ struct JourneyProgressView: View {
     @ObservedObject var tracker: HealthTracker
     
     var body: some View {
-        VStack(spacing: 15) {
-            Text("Your Progress")
-                .font(.custom("Helvetica Neue", size: 24))
-                .fontWeight(.bold)
+        VStack(spacing: 20) {
+            // Days Smoke Free Counter
+            VStack(spacing: 8) {
+                Text("\(tracker.daysSmokeFree)")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundColor(.blue)
+                Text("Days Smoke Free")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.blue.opacity(0.1))
+            )
             
-            HStack(spacing: 30) {
-                StatisticView(title: "Weekly Average",
-                            value: String(format: "%.1f", tracker.weeklySmokingAverage),
-                            subtitle: "cigarettes/day")
+            // Statistics Row
+            HStack(spacing: 20) {
+                StatisticCard(
+                    title: "Weekly Average",
+                    value: String(format: "%.1f", tracker.weeklySmokingAverage),
+                    subtitle: "cigarettes/day",
+                    color: .orange
+                )
                 
-                StatisticView(title: "Daily Goal",
-                            value: "\(tracker.recommendedDailyGoal)",
-                            subtitle: "cigarettes/day")
+                StatisticCard(
+                    title: "Daily Goal",
+                    value: "\(tracker.recommendedDailyGoal)",
+                    subtitle: "cigarettes/day",
+                    color: .green
+                )
             }
         }
         .padding()
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(15)
-        .padding(.horizontal)
+    }
+}
+
+struct StatisticCard: View {
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(color)
+            Text(subtitle)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        )
     }
 }
 
@@ -140,14 +184,18 @@ struct AddDataButton: View {
         Button(action: { showingAddRecord = true }) {
             HStack {
                 Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 20))
                 Text("Log Today's Progress")
+                    .font(.system(size: 17, weight: .semibold))
             }
-            .font(.custom("Helvetica Neue", size: 18))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .cornerRadius(10)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.blue)
+                    .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+            )
         }
         .padding(.horizontal)
     }
@@ -194,20 +242,35 @@ struct CustomTabView: View {
     @ObservedObject var tracker: HealthTracker
     
     var body: some View {
-        VStack {
-            HStack {
-                TabButton(title: "Progress", isSelected: selectedTab == 0) {
-                    selectedTab = 0
-                }
-                TabButton(title: "Habits", isSelected: selectedTab == 1) {
-                    selectedTab = 1
-                }
-                TabButton(title: "Coping", isSelected: selectedTab == 2) {
-                    selectedTab = 2
+        VStack(spacing: 20) {
+            // Custom Segmented Control
+            HStack(spacing: 0) {
+                ForEach(["Progress", "Habits", "Coping"], id: \.self) { tab in
+                    Button(action: {
+                        withAnimation {
+                            selectedTab = ["Progress", "Habits", "Coping"].firstIndex(of: tab) ?? 0
+                        }
+                    }) {
+                        Text(tab)
+                            .font(.system(size: 16, weight: .medium))
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity)
+                            .foregroundColor(selectedTab == ["Progress", "Habits", "Coping"].firstIndex(of: tab) ? .blue : .secondary)
+                    }
                 }
             }
+            .background(
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(width: geometry.size.width / 3, height: 2)
+                        .offset(x: CGFloat(selectedTab) * geometry.size.width / 3)
+                        .animation(.spring(), value: selectedTab)
+                }, alignment: .bottom
+            )
             .padding(.horizontal)
             
+            // Tab Content
             TabContentView(selectedTab: selectedTab, tracker: tracker)
         }
     }

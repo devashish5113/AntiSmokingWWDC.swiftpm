@@ -31,13 +31,21 @@ let package = Package(
                 .landscapeRight,
                 .landscapeLeft,
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
+            ],
+            resources: [
+                .process("AntiSmokingWWDC/3D Models"),
+                .copy("AntiSmokingWWDC/3D Models")
             ]
         )
     ],
     targets: [
         .executableTarget(
             name: "AppModule",
-            path: "."
+            path: ".",
+            resources: [
+                .process("AntiSmokingWWDC/3D Models"),
+                .copy("AntiSmokingWWDC/3D Models")
+            ]
         )
     ],
     swiftLanguageVersions: [.version("6")]

@@ -3,9 +3,14 @@ import SwiftUI
 // Entry Point
 @main
 struct SmokeFreeApp: App {
+    @State private var showOnboarding = true
+    
     var body: some Scene {
         WindowGroup {
-            WelcomeView()
+            ContentView()
+                .sheet(isPresented: $showOnboarding) {
+                    WelcomeView(isPresented: $showOnboarding)
+                }
         }
     }
 }
