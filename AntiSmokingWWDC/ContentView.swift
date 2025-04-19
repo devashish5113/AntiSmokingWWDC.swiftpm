@@ -389,7 +389,7 @@ struct ContentView: View {
         
         // Get documents directory path
         guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            print("❌ Could not access documents directory")
+            // Could not access documents directory
             return
         }
         
@@ -400,9 +400,8 @@ struct ContentView: View {
         if !fileManager.fileExists(atPath: modelsDirectory.path) {
             do {
                 try fileManager.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
-                print("✅ Created models directory at: \(modelsDirectory.path)")
             } catch {
-                print("❌ Failed to create models directory: \(error)")
+                // Failed to create models directory
                 return
             }
         }
@@ -413,7 +412,6 @@ struct ContentView: View {
             
             // Skip if file already exists in documents directory
             if fileManager.fileExists(atPath: destinationURL.path) {
-                print("✅ Model \(modelName) already in documents directory")
                 continue
             }
             
@@ -421,10 +419,9 @@ struct ContentView: View {
             if let extractedURL = extractModelFromAsset(modelName: modelName) {
                 do {
                     try fileManager.copyItem(at: extractedURL, to: destinationURL)
-                    print("✅ Copied model \(modelName) from asset catalog to documents")
                     continue
                 } catch {
-                    print("❌ Failed to copy model \(modelName) from asset catalog: \(error)")
+                    // Failed to copy model from asset catalog
                 }
             }
             
@@ -432,9 +429,8 @@ struct ContentView: View {
             if let bundleURL = Bundle.main.url(forResource: modelName, withExtension: "usdz") {
                 do {
                     try fileManager.copyItem(at: bundleURL, to: destinationURL)
-                    print("✅ Copied model \(modelName) from bundle to documents")
                 } catch {
-                    print("❌ Failed to copy model \(modelName) from bundle: \(error)")
+                    // Failed to copy model from bundle
                 }
             } 
             // Try to find in the app directory directly
@@ -451,26 +447,13 @@ struct ContentView: View {
                         do {
                             let sourceURL = URL(fileURLWithPath: path)
                             try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                            print("✅ Copied model \(modelName) from \(path) to documents")
                             found = true
                             break
                         } catch {
-                            print("❌ Failed to copy model \(modelName) from \(path): \(error)")
+                            // Failed to copy model
                         }
                     }
                 }
-                
-                if !found {
-                    print("❌ Could not find model \(modelName) in app bundle")
-                }
-            }
-        }
-        
-        // Verify models in documents directory
-        print("📄 Models in documents directory:")
-        if let contents = try? fileManager.contentsOfDirectory(atPath: modelsDirectory.path) {
-            for item in contents {
-                print("  - \(item)")
             }
         }
     }
@@ -480,26 +463,21 @@ struct ContentView: View {
         // First try to find a specific asset for this model
         let assetName = modelName.prefix(1).uppercased() + modelName.dropFirst()
         if let specificAsset = NSDataAsset(name: assetName) {
-            print("✅ Found specific asset for \(modelName): \(assetName)")
-            
             // Create a temporary file
             let tempDir = NSTemporaryDirectory()
             let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
             
             do {
                 try specificAsset.data.write(to: tempFileURL)
-                print("✅ Successfully extracted \(modelName) from specific asset")
                 return tempFileURL
             } catch {
-                print("❌ Failed to extract \(modelName) from specific asset: \(error)")
+                // Failed to extract model from specific asset
             }
-        } else {
-            print("ℹ️ No specific asset found for \(modelName), trying combined Models asset")
         }
         
         // Fall back to the combined Models asset
         guard let asset = NSDataAsset(name: "Models") else {
-            print("❌ Models asset not found in asset catalog")
+            // Models asset not found in asset catalog
             return nil
         }
         
@@ -509,10 +487,9 @@ struct ContentView: View {
         
         do {
             try asset.data.write(to: tempFileURL)
-            print("✅ Successfully extracted \(modelName) from Models asset")
             return tempFileURL
         } catch {
-            print("❌ Failed to extract \(modelName) from asset: \(error)")
+            // Failed to extract model from asset
             return nil
         }
     }

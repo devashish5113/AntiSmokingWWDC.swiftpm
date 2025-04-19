@@ -88,52 +88,14 @@ extension Color {
 @MainActor
 struct HomeView: View {
     init() {
-        // Test if we can load model assets
-        Task {
-            HomeView.testModelAssets()
-        }
+        // Initialize HomeView
     }
     
-    // Test function to verify model assets
-    private static func testModelAssets() {
-        let modelNames = ["brain", "healthylung", "smokerlung", "healthyvsmokerlung", "cigarette"]
+    private func checkAssetAvailability() {
+        // This function checks if assets are available in different formats/capitalization
+        // and is used for debugging purposes only
         
-        for modelName in modelNames {
-            // Try with exact names
-            if let asset = NSDataAsset(name: modelName) {
-                print("✅ ASSET TEST: Found asset with exact name: \(modelName)")
-            } else {
-                print("❌ ASSET TEST: Could not find asset with exact name: \(modelName)")
-                
-                // Try with capitalized first letter
-                let capitalizedName = modelName.prefix(1).uppercased() + modelName.dropFirst()
-                if let asset = NSDataAsset(name: capitalizedName) {
-                    print("✅ ASSET TEST: Found asset with capitalized name: \(capitalizedName)")
-                } else {
-                    print("❌ ASSET TEST: Could not find asset with capitalized name: \(capitalizedName)")
-                    
-                    // Try with specific pattern for lung models
-                    if modelName.contains("lung") {
-                        var specialName = ""
-                        if modelName.starts(with: "healthy") && !modelName.contains("vs") {
-                            specialName = "Healthy" + modelName.dropFirst(7)
-                        } else if modelName.starts(with: "smoker") {
-                            specialName = "Smoker" + modelName.dropFirst(6)
-                        } else if modelName.contains("vsmoker") {
-                            specialName = "HealthyVSSmoker" + modelName.dropFirst(16)
-                        }
-                        
-                        if !specialName.isEmpty {
-                            if let asset = NSDataAsset(name: specialName) {
-                                print("✅ ASSET TEST: Found asset with special name: \(specialName)")
-                            } else {
-                                print("❌ ASSET TEST: Could not find asset with special name: \(specialName)")
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // Asset test function removed to clean up debug code
     }
     
     var body: some View {
@@ -743,7 +705,6 @@ struct EnhancedModelPreview: View {
     
     private func createEnhancedScene() -> SCNScene {
         let scene = SCNScene()
-        print("🔍 Attempting to load model: \(modelName)")
         
         // Try to find the model file
         var modelURL: URL?
@@ -752,39 +713,31 @@ struct EnhancedModelPreview: View {
         // First try specific asset for this model - use brain-specific handling for brain model
         if modelName.lowercased() == "brain" {
             if let specificAsset = NSDataAsset(name: "Brain") {
-                print("✅ Loading brain model from Brain asset")
-                
                 // Create a temporary file
                 let tempDir = NSTemporaryDirectory()
                 let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("brain.usdz")
                 
                 do {
                     try specificAsset.data.write(to: tempFileURL)
-                    print("✅ Extracted brain model to temp file: \(tempFileURL.path)")
                     modelURL = tempFileURL
                 } catch {
-                    print("❌ Failed to extract brain model: \(error)")
+                    // Failed to extract brain model
                 }
             }
         } else {
             // For other models, use the existing code
             let assetName = modelName
             if let specificAsset = NSDataAsset(name: assetName) {
-                print("✅ Loading specific asset for \(modelName): \(assetName)")
-                
                 // Create a temporary file
                 let tempDir = NSTemporaryDirectory()
                 let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
                 
                 do {
                     try specificAsset.data.write(to: tempFileURL)
-                    print("✅ Extracted model from specific asset to temp file: \(tempFileURL.path)")
                     modelURL = tempFileURL
                 } catch {
-                    print("❌ Failed to extract model from specific asset: \(error)")
+                    // Failed to extract model
                 }
-            } else {
-                print("❌ Could not find NSDataAsset named: \(assetName) for model: \(modelName)")
             }
         }
             
@@ -794,10 +747,7 @@ struct EnhancedModelPreview: View {
                 let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
                 let potentialModelURL = bundle.appendingPathComponent(modelFileName)
                 if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
                     modelURL = potentialModelURL
-                } else {
-                    print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
                 }
             }
         }
@@ -808,10 +758,7 @@ struct EnhancedModelPreview: View {
                 let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
                 let potentialModelURL = bundle.appendingPathComponent(modelFileName)
                 if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ Found model in base directory: \(potentialModelURL.path)")
                     modelURL = potentialModelURL
-                } else {
-                    print("❌ Could not find model in base directory: \(potentialModelURL.path)")
                 }
             }
         }
@@ -819,9 +766,7 @@ struct EnhancedModelPreview: View {
         // Load the model if found
         if let modelURL = modelURL {
             do {
-                print("✅ Loading model from URL: \(modelURL.path)")
                 let modelScene = try SCNScene(url: modelURL, options: nil)
-                print("✅ Successfully created SCNScene from URL")
                 
                 if let modelNode = modelScene.rootNode.childNodes.first {
                     // Create a pivot node for centered rotation
@@ -853,170 +798,25 @@ struct EnhancedModelPreview: View {
                     
                     // Add model to pivot node
                     pivotNode.addChildNode(modelNode)
-                    print("✅ Successfully loaded model: \(modelName)")
                     
-                    // Successfully loaded the model - return without creating fallback
                     return scene
-                } else {
-                    print("❌ No child nodes found in model: \(modelName)")
                 }
             } catch {
-                print("❌ Error loading model: \(error.localizedDescription)")
+                // Error handling - return empty scene
             }
-        } else {
-            print("❌ Could not find model URL for: \(modelName)")
         }
         
-        // If we get here, use fallback shape
-        print("⚠️ Using fallback shape for model: \(modelName)")
-        addFallbackShape(to: scene)
+        // Create an empty scene if model could not be loaded
+        let emptyScene = SCNScene()
         
-        // Add lighting
+        // Add basic lighting
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
         ambientLight.light?.intensity = 1000
-        scene.rootNode.addChildNode(ambientLight)
+        emptyScene.rootNode.addChildNode(ambientLight)
         
-        let directionalLight = SCNNode()
-        directionalLight.light = SCNLight()
-        directionalLight.light?.type = .directional
-        directionalLight.light?.intensity = 1400
-        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
-        scene.rootNode.addChildNode(directionalLight)
-        
-        let backLight = SCNNode()
-        backLight.light = SCNLight()
-        backLight.light?.type = .directional
-        backLight.light?.intensity = 1200
-        backLight.position = SCNVector3(x: -5, y: 0, z: -5)
-        scene.rootNode.addChildNode(backLight)
-        
-        return scene
-    }
-    
-    private func addFallbackShape(to scene: SCNScene) {
-        print("Creating fallback model for: \(modelName)")
-        let modelNode = SCNNode()
-        
-        switch modelName {
-        case "brain":
-            // Create brain-like geometry
-            let brainSphere = SCNSphere(radius: 0.5)
-            brainSphere.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-            brainSphere.firstMaterial?.specular.contents = UIColor.white
-            brainSphere.firstMaterial?.roughness.contents = 0.2
-            
-            let brainNode = SCNNode(geometry: brainSphere)
-            modelNode.addChildNode(brainNode)
-            
-            // Add stem
-            let stemCylinder = SCNCylinder(radius: 0.1, height: 0.3)
-            stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-            
-            let stemNode = SCNNode(geometry: stemCylinder)
-            stemNode.position = SCNVector3(0, -0.6, 0)
-            stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
-            modelNode.addChildNode(stemNode)
-            
-            // Position and rotate the brain
-            modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
-            
-        case "healthylung", "smokerlung":
-            // Create a pair of lungs
-            let isHealthy = modelName == "healthylung"
-            let color = isHealthy ? 
-                UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0) : 
-                UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-            
-            // Right lung
-            let rightLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            rightLung.firstMaterial?.diffuse.contents = color
-            let rightLungNode = SCNNode(geometry: rightLung)
-            rightLungNode.position = SCNVector3(0.3, 0, 0)
-            rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
-            modelNode.addChildNode(rightLungNode)
-            
-            // Left lung
-            let leftLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            leftLung.firstMaterial?.diffuse.contents = color
-            let leftLungNode = SCNNode(geometry: leftLung)
-            leftLungNode.position = SCNVector3(-0.3, 0, 0)
-            leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
-            modelNode.addChildNode(leftLungNode)
-            
-            // Add trachea
-            let trachea = SCNCylinder(radius: 0.08, height: 0.4)
-            trachea.firstMaterial?.diffuse.contents = UIColor.white
-            let tracheaNode = SCNNode(geometry: trachea)
-            tracheaNode.position = SCNVector3(0, 0.55, 0)
-            modelNode.addChildNode(tracheaNode)
-            
-            // Set the lungs orientation
-            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-            
-        case "healthyvsmokerlung":
-            // Create healthy lung
-            let healthyLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
-            let healthyLungNode = SCNNode(geometry: healthyLung)
-            healthyLungNode.position = SCNVector3(0.5, 0, 0)
-            modelNode.addChildNode(healthyLungNode)
-            
-            // Create smoker's lung
-            let smokerLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-            let smokerLungNode = SCNNode(geometry: smokerLung)
-            smokerLungNode.position = SCNVector3(-0.5, 0, 0)
-            modelNode.addChildNode(smokerLungNode)
-            
-            // Set the lungs orientation
-            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-            
-        case "cigarette":
-            // Create cigarette model
-            let filter = SCNCylinder(radius: 0.04, height: 0.2)
-            filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
-            let filterNode = SCNNode(geometry: filter)
-            filterNode.position = SCNVector3(0, -0.3, 0)
-            modelNode.addChildNode(filterNode)
-            
-            let tobacco = SCNCylinder(radius: 0.04, height: 0.4)
-            tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
-            let tobaccoNode = SCNNode(geometry: tobacco)
-            tobaccoNode.position = SCNVector3(0, 0, 0)
-            modelNode.addChildNode(tobaccoNode)
-            
-            let ash = SCNCone(topRadius: 0.01, bottomRadius: 0.04, height: 0.1)
-            ash.firstMaterial?.diffuse.contents = UIColor.darkGray
-            let ashNode = SCNNode(geometry: ash)
-            ashNode.position = SCNVector3(0, 0.25, 0)
-            modelNode.addChildNode(ashNode)
-            
-        default:
-            // Create a default cube
-            let box = SCNBox(width: 0.5, height: 0.5, length: 0.5, chamferRadius: 0.05)
-            box.firstMaterial?.diffuse.contents = UIColor.orange
-            let boxNode = SCNNode(geometry: box)
-            modelNode.addChildNode(boxNode)
-        }
-        
-        // Create a pivot node for rotation
-        let pivotNode = SCNNode()
-        pivotNode.position = SCNVector3(0, 0, -1.2)
-        
-        // Add the model to the pivot
-        pivotNode.addChildNode(modelNode)
-        
-        // Add auto-rotation action
-        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
-        let repeatAction = SCNAction.repeatForever(rotationAction)
-        pivotNode.runAction(repeatAction)
-        
-        // Add to scene
-        scene.rootNode.addChildNode(pivotNode)
-        
-        print("Added fallback model for: \(modelName)")
+        return emptyScene
     }
 }
 
@@ -1064,7 +864,6 @@ struct EnhancedLargeModelView: View {
     
     private func createEnhancedLargeScene() -> SCNScene {
         let scene = SCNScene()
-        print("🔍 Attempting to load large model: \(modelName)")
         
         // Try to find the model file
         var modelURL: URL?
@@ -1073,39 +872,31 @@ struct EnhancedLargeModelView: View {
         // First try specific asset for this model - use brain-specific handling for brain model
         if modelName.lowercased() == "brain" {
             if let specificAsset = NSDataAsset(name: "Brain") {
-                print("✅ Loading brain model from Brain asset")
-                
                 // Create a temporary file
                 let tempDir = NSTemporaryDirectory()
                 let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("brain.usdz")
                 
                 do {
                     try specificAsset.data.write(to: tempFileURL)
-                    print("✅ Extracted brain model to temp file: \(tempFileURL.path)")
                     modelURL = tempFileURL
                 } catch {
-                    print("❌ Failed to extract brain model: \(error)")
+                    // Failed to extract brain model
                 }
             }
         } else {
             // For other models, use the existing code
             let assetName = modelName
             if let specificAsset = NSDataAsset(name: assetName) {
-                print("✅ Loading specific asset for \(modelName): \(assetName)")
-                
                 // Create a temporary file
                 let tempDir = NSTemporaryDirectory()
                 let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
                 
                 do {
                     try specificAsset.data.write(to: tempFileURL)
-                    print("✅ Extracted model from specific asset to temp file: \(tempFileURL.path)")
                     modelURL = tempFileURL
                 } catch {
-                    print("❌ Failed to extract model from specific asset: \(error)")
+                    // Failed to extract model
                 }
-            } else {
-                print("❌ Could not find NSDataAsset named: \(assetName) for model: \(modelName)")
             }
         }
             
@@ -1115,10 +906,7 @@ struct EnhancedLargeModelView: View {
                 let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
                 let potentialModelURL = bundle.appendingPathComponent(modelFileName)
                 if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
                     modelURL = potentialModelURL
-                } else {
-                    print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
                 }
             }
         }
@@ -1129,10 +917,7 @@ struct EnhancedLargeModelView: View {
                 let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
                 let potentialModelURL = bundle.appendingPathComponent(modelFileName)
                 if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ Found model in base directory: \(potentialModelURL.path)")
                     modelURL = potentialModelURL
-                } else {
-                    print("❌ Could not find model in base directory: \(potentialModelURL.path)")
                 }
             }
         }
@@ -1140,9 +925,7 @@ struct EnhancedLargeModelView: View {
         // Load the model if found
         if let modelURL = modelURL {
             do {
-                print("✅ Loading model from URL: \(modelURL.path)")
                 let modelScene = try SCNScene(url: modelURL, options: nil)
-                print("✅ Successfully created SCNScene from URL")
                 
                 if let modelNode = modelScene.rootNode.childNodes.first {
                     // Create a pivot node for centered rotation
@@ -1174,170 +957,25 @@ struct EnhancedLargeModelView: View {
                     
                     // Add model to pivot node
                     pivotNode.addChildNode(modelNode)
-                    print("✅ Successfully loaded model: \(modelName)")
                     
-                    // Successfully loaded the model - return without creating fallback
                     return scene
-                } else {
-                    print("❌ No child nodes found in model: \(modelName)")
                 }
             } catch {
-                print("❌ Error loading model: \(error.localizedDescription)")
+                // Error handling - return empty scene
             }
-        } else {
-            print("❌ Could not find model URL for: \(modelName)")
         }
         
-        // If we get here, use fallback shape
-        print("⚠️ Using fallback shape for model: \(modelName)")
-        addFallbackShape(to: scene)
+        // Create an empty scene if model could not be loaded
+        let emptyScene = SCNScene()
         
-        // Add enhanced lighting for better visibility
+        // Add basic lighting
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
         ambientLight.light?.intensity = 1000
-        scene.rootNode.addChildNode(ambientLight)
+        emptyScene.rootNode.addChildNode(ambientLight)
         
-        let directionalLight = SCNNode()
-        directionalLight.light = SCNLight()
-        directionalLight.light?.type = .directional
-        directionalLight.light?.intensity = 1400
-        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
-        scene.rootNode.addChildNode(directionalLight)
-        
-        let backLight = SCNNode()
-        backLight.light = SCNLight()
-        backLight.light?.type = .directional
-        backLight.light?.intensity = 1200
-        backLight.position = SCNVector3(x: -5, y: 0, z: -5)
-        scene.rootNode.addChildNode(backLight)
-        
-        return scene
-    }
-    
-    private func addFallbackShape(to scene: SCNScene) {
-        print("Creating fallback model for: \(modelName)")
-        let modelNode = SCNNode()
-        
-        switch modelName {
-        case "brain":
-            // Create brain-like geometry
-            let brainSphere = SCNSphere(radius: 0.5)
-            brainSphere.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-            brainSphere.firstMaterial?.specular.contents = UIColor.white
-            brainSphere.firstMaterial?.roughness.contents = 0.2
-            
-            let brainNode = SCNNode(geometry: brainSphere)
-            modelNode.addChildNode(brainNode)
-            
-            // Add stem
-            let stemCylinder = SCNCylinder(radius: 0.1, height: 0.3)
-            stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-            
-            let stemNode = SCNNode(geometry: stemCylinder)
-            stemNode.position = SCNVector3(0, -0.6, 0)
-            stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
-            modelNode.addChildNode(stemNode)
-            
-            // Position and rotate the brain
-            modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
-            
-        case "healthylung", "smokerlung":
-            // Create a pair of lungs
-            let isHealthy = modelName == "healthylung"
-            let color = isHealthy ? 
-                UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0) : 
-                UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-            
-            // Right lung
-            let rightLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            rightLung.firstMaterial?.diffuse.contents = color
-            let rightLungNode = SCNNode(geometry: rightLung)
-            rightLungNode.position = SCNVector3(0.3, 0, 0)
-            rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
-            modelNode.addChildNode(rightLungNode)
-            
-            // Left lung
-            let leftLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            leftLung.firstMaterial?.diffuse.contents = color
-            let leftLungNode = SCNNode(geometry: leftLung)
-            leftLungNode.position = SCNVector3(-0.3, 0, 0)
-            leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
-            modelNode.addChildNode(leftLungNode)
-            
-            // Add trachea
-            let trachea = SCNCylinder(radius: 0.08, height: 0.4)
-            trachea.firstMaterial?.diffuse.contents = UIColor.white
-            let tracheaNode = SCNNode(geometry: trachea)
-            tracheaNode.position = SCNVector3(0, 0.55, 0)
-            modelNode.addChildNode(tracheaNode)
-            
-            // Set the lungs orientation
-            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-            
-        case "healthyvsmokerlung":
-            // Create healthy lung
-            let healthyLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
-            let healthyLungNode = SCNNode(geometry: healthyLung)
-            healthyLungNode.position = SCNVector3(0.5, 0, 0)
-            modelNode.addChildNode(healthyLungNode)
-            
-            // Create smoker's lung
-            let smokerLung = SCNCapsule(capRadius: 0.25, height: 0.7)
-            smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-            let smokerLungNode = SCNNode(geometry: smokerLung)
-            smokerLungNode.position = SCNVector3(-0.5, 0, 0)
-            modelNode.addChildNode(smokerLungNode)
-            
-            // Set the lungs orientation
-            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-            
-        case "cigarette":
-            // Create cigarette model
-            let filter = SCNCylinder(radius: 0.04, height: 0.2)
-            filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
-            let filterNode = SCNNode(geometry: filter)
-            filterNode.position = SCNVector3(0, -0.3, 0)
-            modelNode.addChildNode(filterNode)
-            
-            let tobacco = SCNCylinder(radius: 0.04, height: 0.4)
-            tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
-            let tobaccoNode = SCNNode(geometry: tobacco)
-            tobaccoNode.position = SCNVector3(0, 0, 0)
-            modelNode.addChildNode(tobaccoNode)
-            
-            let ash = SCNCone(topRadius: 0.01, bottomRadius: 0.04, height: 0.1)
-            ash.firstMaterial?.diffuse.contents = UIColor.darkGray
-            let ashNode = SCNNode(geometry: ash)
-            ashNode.position = SCNVector3(0, 0.25, 0)
-            modelNode.addChildNode(ashNode)
-            
-        default:
-            // Create a default cube
-            let box = SCNBox(width: 0.5, height: 0.5, length: 0.5, chamferRadius: 0.05)
-            box.firstMaterial?.diffuse.contents = UIColor.orange
-            let boxNode = SCNNode(geometry: box)
-            modelNode.addChildNode(boxNode)
-        }
-        
-        // Create a pivot node for rotation
-        let pivotNode = SCNNode()
-        pivotNode.position = SCNVector3(0, 0, -1.2)
-        
-        // Add the model to the pivot
-        pivotNode.addChildNode(modelNode)
-        
-        // Add auto-rotation action
-        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
-        let repeatAction = SCNAction.repeatForever(rotationAction)
-        pivotNode.runAction(repeatAction)
-        
-        // Add to scene
-        scene.rootNode.addChildNode(pivotNode)
-        
-        print("Added fallback model for: \(modelName)")
+        return emptyScene
     }
 }
 
