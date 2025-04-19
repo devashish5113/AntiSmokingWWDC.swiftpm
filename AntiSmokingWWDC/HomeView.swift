@@ -8,49 +8,359 @@
 import SwiftUI
 import SceneKit
 
+struct HealthStyleNavigationBar: ViewModifier {
+    let color: Color
+    let title: String
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            // Background gradient layer that extends under navigation bar
+            VStack(spacing: 0) {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        color.opacity(0.25),
+                        color.opacity(0.18),
+                        color.opacity(0.1),
+                        color.opacity(0.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 350)
+                
+                Color(UIColor.systemGroupedBackground)
+                    .frame(maxHeight: .infinity)
+            }
+            .ignoresSafeArea()
+            
+            // Content layer
+            content
+                .navigationBarTitleDisplayMode(.large)
+                .navigationTitle(title)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        // Use NavigationLink only on the HomeView, not in UserProfileView
+                        if title != "Profile" {
+                            NavigationLink(destination: UserProfileView()) {
+                                Image(systemName: "person.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 28))
+                            }
+                        } else {
+                            // Just a placeholder for consistent spacing when on profile
+                            Image(systemName: "person.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.system(size: 28))
+                                .opacity(0.0) // Make invisible but keep spacing
+                        }
+                    }
+                }
+                .toolbarBackground(.hidden, for: .navigationBar)
+        }
+    }
+}
+
+extension View {
+    func healthStyleNavigation(title: String, color: Color = .red) -> some View {
+        self.modifier(HealthStyleNavigationBar(color: color, title: title))
+    }
+    
+    // Add keyboard dismissal view modifier
+    func dismissKeyboardOnTap() -> some View {
+        self.modifier(DismissKeyboardOnTapModifier())
+    }
+}
+
+// Keyboard dismissal modifier
+struct DismissKeyboardOnTapModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
+    }
+}
+
+extension Color {
+    static let systemBackground = Color(UIColor.systemBackground)
+}
+
+@MainActor
 struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 30) {
-                    // Lungs Impact Card
-                    EnhancedImpactCard(
-                        title: "Lungs",
-                        subtitle: "Respiratory System Impact",
-                        modelName: "healthylung",
-                        color: Color.blue.opacity(0.8),
-                        impacts: [
-                            "Decreased lung capacity by up to 30%",
-                            "Destruction of air sacs (alveoli)",
-                            "Chronic bronchitis & inflammation",
-                            "25x increased lung cancer risk"
-                        ],
-                        detailView: LungsImpactDetailView()
-                    )
+                VStack(spacing: 25) {
+                    // Respiratory System Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Respiratory System")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal)
+                        
+                        // Lungs Impact Card
+                        EnhancedImpactCard(
+                            title: "Lungs",
+                            subtitle: "",
+                            modelName: "healthylung",
+                            color: .red,
+                            impacts: [
+                                "Lung capacity reduced by 30%",
+                                "Air sacs destruction",
+                                "Chronic inflammation",
+                                "High cancer risk"
+                            ],
+                            detailView: LungsImpactDetailView()
+                        )
+                    }
                     
-                    // Brain Impact Card
-                    EnhancedImpactCard(
-                        title: "Brain",
-                        subtitle: "Neurological System Impact",
-                        modelName: "brain",
-                        color: Color.purple.opacity(0.8),
-                        impacts: [
-                            "Disruption of dopamine system",
-                            "Reduced brain volume and cortex thinning",
-                            "Altered neurotransmitter balance",
-                            "Doubled risk of stroke"
-                        ],
-                        detailView: EnhancedBrainImpactDetailView()
-                    )
+                    // Neurological System Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Neurological System")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal)
+                        
+                        // Brain Impact Card
+                        EnhancedImpactCard(
+                            title: "Brain",
+                            subtitle: "",
+                            modelName: "brain",
+                            color: .red,
+                            impacts: [
+                                "Dopamine disruption",
+                                "Brain volume reduction",
+                                "Chemical imbalance",
+                                "Stroke risk doubled"
+                            ],
+                            detailView: EnhancedBrainImpactDetailView()
+                        )
+                    }
                     
                     Spacer(minLength: 60)
                 }
                 .padding(.top, 20)
                 .padding(.bottom)
             }
-            .navigationTitle("Impact")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .healthStyleNavigation(title: "Impact")
+        }
+    }
+}
+
+// UserDefaults wrapper
+class UserSettings: ObservableObject {
+    @Published var userName: String {
+        didSet {
+            UserDefaults.standard.set(userName, forKey: "userName")
+        }
+    }
+    
+    @Published var userAge: String {
+        didSet {
+            UserDefaults.standard.set(userAge, forKey: "userAge")
+        }
+    }
+    
+    @Published var smokingYears: String {
+        didSet {
+            UserDefaults.standard.set(smokingYears, forKey: "smokingYears")
+        }
+    }
+    
+    @Published var cigarettesPerDay: String {
+        didSet {
+            UserDefaults.standard.set(cigarettesPerDay, forKey: "cigarettesPerDay")
+        }
+    }
+    
+    @Published var quitDate: Date {
+        didSet {
+            UserDefaults.standard.set(quitDate, forKey: "quitDate")
+        }
+    }
+    
+    init() {
+        self.userName = UserDefaults.standard.string(forKey: "userName") ?? ""
+        self.userAge = UserDefaults.standard.string(forKey: "userAge") ?? ""
+        self.smokingYears = UserDefaults.standard.string(forKey: "smokingYears") ?? ""
+        self.cigarettesPerDay = UserDefaults.standard.string(forKey: "cigarettesPerDay") ?? ""
+        self.quitDate = UserDefaults.standard.object(forKey: "quitDate") as? Date ?? Date()
+    }
+}
+
+struct UserProfileView: View {
+    @StateObject private var settings = UserSettings()
+    @Environment(\.presentationMode) var presentationMode
+    
+    // Function to get user initials
+    private var userInitials: String {
+        let name = settings.userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty {
+            return "?"
+        }
+        
+        let components = name.components(separatedBy: " ")
+        if components.count > 1, let first = components.first?.first, let last = components.last?.first {
+            return String(first) + String(last)
+        } else if let first = name.first {
+            return String(first)
+        }
+        return "?"
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 30) {
+                // Large profile circle with initials
+                ZStack {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 120, height: 120)
+                    
+                    Text(userInitials)
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .padding(.top, 20)
+                
+                // Personal information section
+                VStack(spacing: 20) {
+                    // Name field
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Name")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Your Name", text: $settings.userName)
+                            .font(.body)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                    }
+                    
+                    // Age field
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Age")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Your Age", text: $settings.userAge)
+                            .font(.body)
+                            .keyboardType(.numberPad)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Improved smoking history section
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Smoking History")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal)
+                    
+                    HStack(spacing: 15) {
+                        // Years smoking card
+                        VStack(alignment: .center, spacing: 8) {
+                            Text("Years")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            TextField("0", text: $settings.smokingYears)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.center)
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(16)
+                        
+                        // Cigarettes per day card
+                        VStack(alignment: .center, spacing: 8) {
+                            Text("Daily Cigarettes")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            TextField("0", text: $settings.cigarettesPerDay)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.center)
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(16)
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Statistics section
+                if let cigarettes = Int(settings.cigarettesPerDay), let years = Int(settings.smokingYears), years > 0, cigarettes > 0 {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Overall Impact")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal)
+                        
+                        VStack(spacing: 12) {
+                            // Total cigarettes
+                            HStack {
+                                Text("Total Cigarettes")
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                Text("\(cigarettes * 365 * years)")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.red)
+                            }
+                            
+                            Divider()
+                            
+                            // Money spent
+                            HStack {
+                                Text("Money Spent (est.)")
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                Text("$\(cigarettes * 365 * years * 1)")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(16)
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            .padding(.bottom, 40)
+        }
+        .dismissKeyboardOnTap()
+        .healthStyleNavigation(title: "Profile")
+    }
+}
+
+struct StatisticRow: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundColor(.red)
+                .fontWeight(.semibold)
         }
     }
 }
@@ -64,73 +374,147 @@ struct EnhancedImpactCard<DetailContent: View>: View {
     let detailView: DetailContent
     
     @State private var showDetail = false
+    @State private var showMetricsInfo = false
+    
+    // Get appropriate emoji for the organ
+    private var organEmoji: String {
+        if title == "Lungs" {
+            return "🫁"
+        } else if title == "Brain" {
+            return "🧠"
+        }
+        return ""
+    }
     
     var body: some View {
         Button(action: {
             showDetail = true
         }) {
             VStack(alignment: .leading, spacing: 0) {
-                // Header
+                // Header with title and chevron
                 HStack {
-                    Text(title)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Text(organEmoji)
+                            .font(.system(size: 24))
+                        
+                        Text(title)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.red)
+                    }
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right.circle")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white.opacity(0.8))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.gray)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, 12)
                 
-                Text(subtitle)
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.9))
-                    .padding(.horizontal, 20)
-                
-                // Content area
-                HStack(alignment: .top, spacing: 0) {
-                    // Model view integrated with card color
-                    EnhancedModelPreview(modelName: modelName, cardColor: color)
-                        .frame(width: 140, height: 160)
-                        .padding(.leading, 10)
-                        .padding(.vertical, 15)
-                    
-                    // Impact points
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Key Impacts")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.bottom, 5)
+                // New layout with main content
+                VStack(spacing: 20) {
+                    // Risk level and 3D model in one row
+                    HStack(alignment: .center, spacing: 0) {
+                        Spacer(minLength: 20)
                         
-                        ForEach(impacts, id: \.self) { impact in
-                            HStack(alignment: .top, spacing: 10) {
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 6, height: 6)
-                                    .padding(.top, 6)
+                        // Risk Level as circular gauge with info button - now centered
+                        VStack(alignment: .center, spacing: 8) {
+                            // Risk level and info button in one line
+                            HStack(alignment: .center, spacing: 4) {
+                                Text("Risk Level")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.secondary)
                                 
-                                Text(impact)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .lineLimit(2)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                Button(action: {
+                                    // Open info sheet
+                                    showMetricsInfo = true
+                                }) {
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color.gray.opacity(0.8))
+                                }
+                            }
+                            .padding(.leading, 5)
+                            .padding(.bottom, 10)
+                            
+                            ZStack {
+                                // Background circle
+                                Circle()
+                                    .stroke(color.opacity(0.2), lineWidth: 8)
+                                    .frame(width: 86, height: 86)
+                                
+                                // Foreground circle (4/5 = 80% filled)
+                                Circle()
+                                    .trim(from: 0, to: 0.8)
+                                    .stroke(color, lineWidth: 8)
+                                    .frame(width: 86, height: 86)
+                                    .rotationEffect(.degrees(-90))
+                                
+                                // Percentage
+                                Text("80%")
+                                    .font(.system(size: 21, weight: .bold))
+                                    .foregroundColor(color)
                             }
                         }
+                        .frame(width: 110)
+                        
+                        Spacer()
+                        
+                        // Model view pushed to the right
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.gray.opacity(0.05))
+                            
+                            EnhancedModelPreview(modelName: modelName, cardColor: color)
+                        }
+                        .frame(width: 180, height: 160)
+                        .padding(.trailing, 12)
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 15)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 5)
+                    
+                    Divider()
+                        .padding(.horizontal)
+                    
+                    // Key metrics in prominent boxes
+                    HStack(spacing: 15) {
+                        // Capacity Reduction / Volume Impact
+                        VStack(alignment: .center, spacing: 6) {
+                            Text(title == "Lungs" ? "Capacity Reduction" : "Volume Impact")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Text(title == "Lungs" ? "30%" : "15%")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.red.opacity(0.08)))
+                        
+                        // Recovery Time
+                        VStack(alignment: .center, spacing: 6) {
+                            Text("Recovery Time")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Text(title == "Lungs" ? "1-9 months" : "1-2 years")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.1)))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(color)
-                    .shadow(color: color.opacity(0.5), radius: 10, x: 0, y: 5)
-            )
+            .background(Color.white)
+            .cornerRadius(18)
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
             .padding(.horizontal)
         }
         .buttonStyle(PlainButtonStyle())
@@ -142,6 +526,133 @@ struct EnhancedImpactCard<DetailContent: View>: View {
                     })
                     .navigationBarTitle("\(title) Impact", displayMode: .inline)
             }
+        }
+        .sheet(isPresented: $showMetricsInfo) {
+            MetricsInfoView(organName: title)
+        }
+    }
+}
+
+struct MetricsInfoView: View {
+    let organName: String
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Top section with title and explanation
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How We Calculate Metrics")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .padding(.bottom, 4)
+                        
+                        Text("These metrics are based on comprehensive medical research on smoking's effects on the \(organName.lowercased()).")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    
+                    // Risk Level explanation
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.15))
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 18))
+                            }
+                            
+                            Text("Risk Level")
+                                .font(.headline)
+                        }
+                        
+                        Text("Based on data from WHO and CDC studies comparing smokers to non-smokers. The 80% risk level indicates significantly higher likelihood of developing \(organName == "Lungs" ? "respiratory diseases" : "brain and cognitive disorders") compared to non-smokers.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                    )
+                    .padding(.horizontal)
+                    
+                    // Impact explanation
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.15))
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: organName == "Lungs" ? "lungs.fill" : "brain")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 18))
+                            }
+                            
+                            Text(organName == "Lungs" ? "Capacity Reduction" : "Volume Impact")
+                                .font(.headline)
+                        }
+                        
+                        Text(organName == "Lungs" 
+                             ? "The 30% reduction in lung capacity is observed in long-term smokers after 15-20 years of smoking, based on pulmonary function tests."
+                             : "The 15% reduction in brain volume, particularly in regions related to memory and cognitive function, is observed through MRI studies of long-term smokers.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                    )
+                    .padding(.horizontal)
+                    
+                    // Recovery Time explanation
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.15))
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 18))
+                            }
+                            
+                            Text("Recovery Time")
+                                .font(.headline)
+                        }
+                        
+                        Text(organName == "Lungs" 
+                             ? "Recovery timeline of 1-9 months represents time needed for cilia regeneration and improved lung function after quitting. Complete recovery varies by individual and smoking history length."
+                             : "1-2 years represents the time needed for brain chemistry normalization and neural pathway rewiring. Neurotransmitter levels typically stabilize within this timeframe.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                    )
+                    .padding(.horizontal)
+                }
+                .padding(.bottom, 30)
+            }
+            .navigationBarTitle("Metrics Explained", displayMode: .inline)
+            .navigationBarItems(trailing: Button("Close") {
+                presentationMode.wrappedValue.dismiss()
+            })
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 }
@@ -163,19 +674,17 @@ struct EnhancedModelPreview: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(resetTrigger) // Force view refresh on reset
             
-            // Reset button
+            // Reset button with improved design
             Button(action: {
                 resetTrigger.toggle()
             }) {
-                Image(systemName: "arrow.counterclockwise.circle")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(5)
-                    .background(Circle().fill(cardColor.opacity(0.3)))
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+                    .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
             }
             .padding(8)
         }
-        .background(Color.white.opacity(0.2))
         .cornerRadius(12)
     }
     
@@ -207,17 +716,28 @@ struct EnhancedModelPreview: View {
                     if modelName == "brain" {
                         // Match brain orientation exactly with second screenshot
                         modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
+                        
+                        // Scale brain model slightly larger to match lungs height
+                        modelNode.scale = SCNVector3(scale * 1.15, scale * 1.15, scale * 1.15)
+                        
+                        // For brain model, move it slightly leftward to prevent escaping frame during rotation
+                        pivotNode.position = SCNVector3(-0.15, 0, -1.35)
+                        
+                        // Apply rotation to pivot node (same as lungs) instead of the model itself
+                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40) // Same speed as lungs in card preview
+                        let repeatAction = SCNAction.repeatForever(rotationAction)
+                        pivotNode.runAction(repeatAction)
                     } else if modelName.contains("healthyvsmoker") || 
                               modelName.contains("smokerlung") || 
                               modelName.contains("healthylung") {
                         // Invert lungs (flip upside down from current position)
                         modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+                        
+                        // Add rotation animation for visibility - around Y axis only
+                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40) // Standard preview rotation speed
+                        let repeatAction = SCNAction.repeatForever(rotationAction)
+                        pivotNode.runAction(repeatAction)
                     }
-                    
-                    // Add rotation animation for visibility - around Y axis only
-                    let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
-                    let repeatAction = SCNAction.repeatForever(rotationAction)
-                    pivotNode.runAction(repeatAction)
                     
                     // Add model to pivot node
                     pivotNode.addChildNode(modelNode)
@@ -266,18 +786,18 @@ struct EnhancedModelPreview: View {
         
         if modelName == "brain" {
             geometry = SCNSphere(radius: 0.5)
-            geometry.firstMaterial?.diffuse.contents = UIColor.purple.withAlphaComponent(0.8)
+            geometry.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
         } else {
             // For lungs, create a simple pair of spheres
             let node = SCNNode()
             
             let leftLung = SCNSphere(radius: 0.4)
-            leftLung.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
+            leftLung.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
             let leftNode = SCNNode(geometry: leftLung)
             leftNode.position = SCNVector3(-0.3, 0, 0)
             
             let rightLung = SCNSphere(radius: 0.4)
-            rightLung.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
+            rightLung.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
             let rightNode = SCNNode(geometry: rightLung)
             rightNode.position = SCNVector3(0.3, 0, 0)
             
@@ -302,30 +822,52 @@ struct CompactRecoveryTimeline: View {
                 .fontWeight(.bold)
                 .padding(.horizontal)
             
-            VStack(alignment: .leading, spacing: 15) {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(recoverySteps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 12) {
-                        Circle()
-                            .fill(step.color)
-                            .frame(width: 8, height: 8)
-                            .padding(.top, 6)
+                    HStack(alignment: .top, spacing: 14) {
+                        // Timeline dot and line
+                        VStack(spacing: 0) {
+                            // Dot
+                            Circle()
+                                .fill(step.color)
+                                .frame(width: 14, height: 14)
+                                .background(
+                                    Circle()
+                                        .stroke(step.color.opacity(0.3), lineWidth: 2)
+                                        .frame(width: 20, height: 20)
+                                )
+                            
+                            // Line to next item (except for last item)
+                            if index < recoverySteps.count - 1 {
+                                Rectangle()
+                                    .fill(step.color.opacity(0.3))
+                                    .frame(width: 2, height: 40)
+                            }
+                        }
+                        .frame(width: 20)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(step.timeframe)
-                                .font(.headline)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(step.color)
                             
                             Text(step.description)
-                                .font(.subheadline)
+                                .font(.system(size: 15))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
+                                .padding(.bottom, index < recoverySteps.count - 1 ? 20 : 0)
                         }
                     }
+                    .padding(.leading, 8)
                 }
             }
-            .padding()
-            .background(Color.white)
-            .cornerRadius(10)
-            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+            )
             .padding(.horizontal)
         }
     }
@@ -383,8 +925,8 @@ struct LungsImpactDetailView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.blue)
-                                    .shadow(color: Color.blue.opacity(0.4), radius: 5, x: 0, y: 3)
+                                    .fill(Color.red)
+                                    .shadow(color: Color.red.opacity(0.4), radius: 5, x: 0, y: 3)
                             )
                             .padding(.horizontal)
                     }
@@ -466,7 +1008,7 @@ struct EnhancedBrainImpactDetailView: View {
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 18)
-                        .fill(Color.purple.opacity(0.1))
+                        .fill(Color.blue.opacity(0.1))
                 )
                 .padding(.horizontal)
                 
@@ -744,7 +1286,7 @@ struct NeurotransmitterBar: View {
                 .foregroundColor(.secondary)
                 .padding(.top, 5)
         }
-        .padding()
+            .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
         .cornerRadius(10)
@@ -766,21 +1308,32 @@ struct EnhancedLargeModelView: View {
                 options: [.autoenablesDefaultLighting, .allowsCameraControl],
                 preferredFramesPerSecond: 60
             )
-            .background(Color.white)
-            .cornerRadius(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.1)]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
             .id(resetTrigger) // Force view refresh on reset
             
-            // Reset button
+            // Reset button with improved design
             Button(action: {
                 resetTrigger.toggle()
             }) {
-                Image(systemName: "arrow.counterclockwise.circle")
-                    .font(.system(size: 20))
-                    .foregroundColor(.gray.opacity(0.7))
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.blue.opacity(0.8))
                     .padding(8)
-                    .background(Circle().fill(Color.white.opacity(0.7)))
+                    .background(Circle().fill(Color.white.opacity(0.9)))
+                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
             }
-            .padding(12)
+            .padding(16)
         }
     }
     
@@ -812,17 +1365,24 @@ struct EnhancedLargeModelView: View {
                     if modelName == "brain" {
                         // Match brain orientation exactly with second screenshot
                         modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
+                        // For brain model, move it slightly leftward to prevent escaping frame during rotation
+                        pivotNode.position = SCNVector3(-0.15, 0, -1.35)
+                        
+                        // Apply rotation to pivot node (same as lungs) instead of the model itself
+                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 120) // Slower rotation for detailed view
+                        let repeatAction = SCNAction.repeatForever(rotationAction)
+                        pivotNode.runAction(repeatAction)
                     } else if modelName.contains("healthyvsmoker") || 
                               modelName.contains("smokerlung") || 
                               modelName.contains("healthylung") {
                         // Invert lungs (flip upside down from current position)
                         modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+                        
+                        // Add very slow rotation animation for subtle movement
+                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 120) // Slow rotation for detailed view
+                        let repeatAction = SCNAction.repeatForever(rotationAction)
+                        pivotNode.runAction(repeatAction)
                     }
-                    
-                    // Add very slow rotation animation for subtle movement
-                    let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 120) // Extremely slow rotation
-                    let repeatAction = SCNAction.repeatForever(rotationAction)
-                    pivotNode.runAction(repeatAction)
                     
                     // Add model to pivot node
                     pivotNode.addChildNode(modelNode)
@@ -870,7 +1430,7 @@ struct EnhancedLargeModelView: View {
         
         if modelName == "brain" {
             geometry = SCNSphere(radius: 0.5)
-            geometry.firstMaterial?.diffuse.contents = UIColor.purple.withAlphaComponent(0.8)
+            geometry.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
         } else if modelName.contains("healthy") && modelName.contains("smoker") {
             // For comparison view, create both side by side
             let node = SCNNode()
@@ -954,26 +1514,38 @@ struct ImpactInfoCard: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 15) {
-            Image(systemName: iconName)
-                .font(.system(size: 24))
-                .foregroundColor(color)
-                .frame(width: 32, height: 32)
+            // Enhanced icon with background circle
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 46, height: 46)
+                
+                Image(systemName: iconName)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+            }
             
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.headline)
+                    .foregroundColor(color)
                 
                 Text(description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()
         }
-            .padding()
-        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
+        )
         .padding(.horizontal)
     }
 }
+

@@ -76,13 +76,11 @@ struct QuitSmokingView: View {
                     CustomTabView(selectedTab: $selectedTab, tracker: tracker)
                 }
             }
-            .navigationTitle("Quit Smoking")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .dismissKeyboardOnTap()
+            .healthStyleNavigation(title: "Quit Smoking")
             .sheet(isPresented: $showingAddRecord) {
                 AddHealthRecordView(tracker: tracker, isPresented: $showingAddRecord)
             }
-            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 }
@@ -291,7 +289,7 @@ struct AddHealthRecordView: View {
     let moods = ["Great", "Good", "Neutral", "Stressed", "Anxious"]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Health Metrics")) {
                     HStack {
@@ -330,14 +328,21 @@ struct AddHealthRecordView: View {
                     TextField("Coping strategies used", text: $copingStrategy)
                 }
             }
-            .navigationTitle("Add Daily Record")
-            .navigationBarItems(
-                leading: Button("Cancel") { isPresented = false },
-                trailing: Button("Save") {
-                    saveRecord()
-                    isPresented = false
+            .dismissKeyboardOnTap()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { isPresented = false }
                 }
-            )
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveRecord()
+                        isPresented = false
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+            .navigationTitle("Add Daily Record")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     

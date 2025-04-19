@@ -1,6 +1,6 @@
 // Add these structures to the QuitSmokingComponents.swift file
 
-import SwiftUICore
+import SwiftUI
 
 // Daily Stats Components
 struct DailyStatsView: View {

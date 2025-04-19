@@ -39,6 +39,7 @@ struct WelcomeView: View {
             Spacer(minLength: 0)
         }
         .padding([.leading, .trailing])
+        .dismissKeyboardOnTap()
     }
 }
 
