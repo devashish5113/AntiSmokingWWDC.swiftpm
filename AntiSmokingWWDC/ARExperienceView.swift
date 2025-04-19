@@ -9,6 +9,7 @@ import SwiftUI
 import SceneKit
 import ARKit
 import RealityKit
+import AVFoundation
 
 struct ARExperienceView: View {
     @State private var selectedModel: String? = nil
@@ -77,6 +78,7 @@ struct ARExperienceView: View {
             .fullScreenCover(isPresented: $showARView) {
                 if let modelID = selectedModel {
                     ARModelViewerContainer(modelName: modelID)
+                        .edgesIgnoringSafeArea(.all)
                 }
             }
         }
@@ -553,6 +555,16 @@ struct ARModelViewerContainer: View {
         ZStack(alignment: .topTrailing) {
             SceneKitARModelViewer(modelName: modelName)
                 .edgesIgnoringSafeArea(.all)
+                .onAppear {
+                    // Request camera permission explicitly
+                    AVCaptureDevice.requestAccess(for: .video) { granted in
+                        if granted {
+                            print("Camera access granted")
+                        } else {
+                            print("Camera access denied")
+                        }
+                    }
+                }
             
             // Close button
             Button(action: {
@@ -578,7 +590,14 @@ struct SceneKitARModelViewer: UIViewRepresentable {
         // Configure AR session
         let config = ARWorldTrackingConfiguration()
         config.planeDetection = [.horizontal, .vertical]
-        arView.session.run(config)
+        
+        // Reset tracking and run session
+        arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        
+        // Show debug information
+        #if DEBUG
+        arView.debugOptions = [.showFeaturePoints]
+        #endif
         
         // Add coaching overlay
         let coachingOverlay = ARCoachingOverlayView()

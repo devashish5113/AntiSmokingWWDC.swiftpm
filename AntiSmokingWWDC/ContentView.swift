@@ -366,11 +366,12 @@ struct ContentView: View {
                     Text("Home")
                 }
             
-            ARExperienceView()
-                .tabItem {
-                    Image(systemName: "arkit")
-                    Text("AR")
-                }
+            // AR tab hidden for now (future scope)
+            // ARExperienceView()
+            //     .tabItem {
+            //         Image(systemName: "arkit")
+            //         Text("AR")
+            //     }
             
             QuitSmokingView()
                 .tabItem {
