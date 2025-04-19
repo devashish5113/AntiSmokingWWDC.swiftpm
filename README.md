@@ -73,7 +73,7 @@ Despite widespread knowledge about smoking's harmful effects, millions continue 
 
 ## License
 
-[Your license information]
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
