@@ -6,9 +6,9 @@ An interactive educational app that visualizes the devastating effects of smokin
 
 Despite widespread knowledge about smoking's harmful effects, millions continue this habit. This app aims to create a stronger impact by visualizing the actual damage to vital organs in 3D, helping users understand the true extent of smoking's impact and supporting them through the quitting process.
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/1. Onboarding_screen.PNG" width="300" alt="Onboarding Screen">
-  <img src="screenshots/2. Home_screen.PNG" width="300" alt="Home Screen">
+<div align="center">
+  <img src="screenshots/1. Onboarding_screen.PNG" width="380" alt="Onboarding Screen" style="margin-right: 20px;">
+  <img src="screenshots/2. Home_screen.PNG" width="380" alt="Home Screen">
 </div>
 
 ## Key Features
@@ -18,13 +18,12 @@ Despite widespread knowledge about smoking's harmful effects, millions continue 
 - Interactive viewing with rotation and zoom capabilities
 - Visual contrast between healthy and affected tissues
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/3. healthy_lung_model.PNG" width="200" alt="Healthy Lung Model">
-  <img src="screenshots/4. smoker_lung_model.PNG" width="200" alt="Smoker Lung Model">
-  <img src="screenshots/5. comparison_model.PNG" width="200" alt="Comparison Model">
+<div align="center">
+  <img src="screenshots/3. healthy_lung_model.PNG" width="170" alt="Healthy Lung Model" style="margin-right: 10px;">
+  <img src="screenshots/4. smoker_lung_model.PNG" width="170" alt="Smoker Lung Model" style="margin-right: 10px;">
+  <img src="screenshots/5. comparison_model.PNG" width="170" alt="Comparison Model" style="margin-right: 10px;">
+  <img src="screenshots/7. brain_model.PNG" width="170" alt="Brain Model">
 </div>
-
-<img src="screenshots/7. brain_model.PNG" width="300" alt="Brain Model">
 
 ### Comprehensive Health Impact Data
 - Evidence-based neurological impact information
@@ -32,14 +31,11 @@ Despite widespread knowledge about smoking's harmful effects, millions continue 
 - Neurotransmitter changes with interactive visualizations
 - Risk level indicators for different body systems
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/6. lungs_impact.PNG" width="300" alt="Lungs Impact Information">
-  <img src="screenshots/8. brain_impact.PNG" width="300" alt="Brain Impact Information">
-</div>
-
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/9. neurotransmitter_changes.PNG" width="300" alt="Neurotransmitter Changes">
-  <img src="screenshots/10. neurotransmitter_guide.PNG" width="300" alt="Neurotransmitter Guide">
+<div align="center">
+  <img src="screenshots/6. lungs_impact.PNG" width="170" alt="Lungs Impact Information" style="margin-right: 10px;">
+  <img src="screenshots/8. brain_impact.PNG" width="170" alt="Brain Impact Information" style="margin-right: 10px;">
+  <img src="screenshots/9. neurotransmitter_changes.PNG" width="170" alt="Neurotransmitter Changes" style="margin-right: 10px;">
+  <img src="screenshots/10. neurotransmitter_guide.PNG" width="170" alt="Neurotransmitter Guide">
 </div>
 
 ### Quitting Journey Tracker
@@ -49,14 +45,11 @@ Despite widespread knowledge about smoking's harmful effects, millions continue 
 - Statistics on cigarettes avoided and money saved
 - Healthy habits suggestions and coping techniques
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/11. Quit_smoking_screen.PNG" width="300" alt="Quit Smoking Screen">
-  <img src="screenshots/14. profile_screen.PNG" width="300" alt="Profile Screen">
-</div>
-
-<div style="display: flex; justify-content: space-between;">
-  <img src="screenshots/12. healthy_habits.PNG" width="300" alt="Healthy Habits">
-  <img src="screenshots/13. coping_techniques.PNG" width="300" alt="Coping Techniques">
+<div align="center">
+  <img src="screenshots/11. Quit_smoking_screen.PNG" width="170" alt="Quit Smoking Screen" style="margin-right: 10px;">
+  <img src="screenshots/14. profile_screen.PNG" width="170" alt="Profile Screen" style="margin-right: 10px;">
+  <img src="screenshots/12. healthy_habits.PNG" width="170" alt="Healthy Habits" style="margin-right: 10px;">
+  <img src="screenshots/13. coping_techniques.PNG" width="170" alt="Coping Techniques">
 </div>
 
 ## Technical Implementation
