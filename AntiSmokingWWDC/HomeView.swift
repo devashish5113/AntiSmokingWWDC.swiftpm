@@ -87,6 +87,55 @@ extension Color {
 
 @MainActor
 struct HomeView: View {
+    init() {
+        // Test if we can load model assets
+        Task {
+            HomeView.testModelAssets()
+        }
+    }
+    
+    // Test function to verify model assets
+    private static func testModelAssets() {
+        let modelNames = ["brain", "healthylung", "smokerlung", "healthyvsmokerlung", "cigarette"]
+        
+        for modelName in modelNames {
+            // Try with exact names
+            if let asset = NSDataAsset(name: modelName) {
+                print("✅ ASSET TEST: Found asset with exact name: \(modelName)")
+            } else {
+                print("❌ ASSET TEST: Could not find asset with exact name: \(modelName)")
+                
+                // Try with capitalized first letter
+                let capitalizedName = modelName.prefix(1).uppercased() + modelName.dropFirst()
+                if let asset = NSDataAsset(name: capitalizedName) {
+                    print("✅ ASSET TEST: Found asset with capitalized name: \(capitalizedName)")
+                } else {
+                    print("❌ ASSET TEST: Could not find asset with capitalized name: \(capitalizedName)")
+                    
+                    // Try with specific pattern for lung models
+                    if modelName.contains("lung") {
+                        var specialName = ""
+                        if modelName.starts(with: "healthy") && !modelName.contains("vs") {
+                            specialName = "Healthy" + modelName.dropFirst(7)
+                        } else if modelName.starts(with: "smoker") {
+                            specialName = "Smoker" + modelName.dropFirst(6)
+                        } else if modelName.contains("vsmoker") {
+                            specialName = "HealthyVSSmoker" + modelName.dropFirst(16)
+                        }
+                        
+                        if !specialName.isEmpty {
+                            if let asset = NSDataAsset(name: specialName) {
+                                print("✅ ASSET TEST: Found asset with special name: \(specialName)")
+                            } else {
+                                print("❌ ASSET TEST: Could not find asset with special name: \(specialName)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -100,19 +149,7 @@ struct HomeView: View {
                             .padding(.horizontal)
                         
                         // Lungs Impact Card
-                        EnhancedImpactCard(
-                            title: "Lungs",
-                            subtitle: "",
-                            modelName: "healthylung",
-                            color: .red,
-                            impacts: [
-                                "Lung capacity reduced by 30%",
-                                "Air sacs destruction",
-                                "Chronic inflammation",
-                                "High cancer risk"
-                            ],
-                            detailView: LungsImpactDetailView()
-                        )
+                        lungsImpactCard
                     }
                     
                     // Neurological System Section
@@ -146,6 +183,23 @@ struct HomeView: View {
             }
             .healthStyleNavigation(title: "Impact")
         }
+    }
+    
+    // Enhanced impact card for lungs
+    private var lungsImpactCard: some View {
+        EnhancedImpactCard(
+            title: "Lungs",
+            subtitle: "",
+            modelName: "HealthyLung",  // Updated to match asset name
+            color: .red,
+            impacts: [
+                "Lung capacity reduced by 30%",
+                "Air sacs destruction",
+                "Chronic inflammation",
+                "High cancer risk"
+            ],
+            detailView: EnhancedLungsImpactDetailView()
+        )
     }
 }
 
@@ -235,7 +289,7 @@ struct UserProfileView: View {
                         
                         TextField("Your Name", text: $settings.userName)
                             .font(.body)
-                            .padding()
+            .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(10)
                     }
@@ -667,14 +721,14 @@ struct EnhancedModelPreview: View {
         ZStack(alignment: .topTrailing) {
             // Scene view with model
             SceneView(
-                scene: createEnhancedScene(), 
+                scene: createEnhancedScene(),
                 options: [.autoenablesDefaultLighting, .allowsCameraControl],
                 preferredFramesPerSecond: 60
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .id(resetTrigger) // Force view refresh on reset
+            .id(resetTrigger)
             
-            // Reset button with improved design
+            // Reset button with white style (smaller version)
             Button(action: {
                 resetTrigger.toggle()
             }) {
@@ -683,85 +737,141 @@ struct EnhancedModelPreview: View {
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
             }
-            .padding(8)
         }
         .cornerRadius(12)
     }
     
     private func createEnhancedScene() -> SCNScene {
         let scene = SCNScene()
+        print("🔍 Attempting to load model: \(modelName)")
         
-        // Try the approach that works for cigarette model
-        if let modelURL = Bundle.main.url(forResource: modelName, withExtension: "usdz") {
-            print("Found model with plain name at: \(modelURL)")
-            
-            do {
-                let modelScene = try SCNScene(url: modelURL, options: nil)
+        // Try to find the model file
+        var modelURL: URL?
+        let fileManager = FileManager.default
+        
+        // First try specific asset for this model - use brain-specific handling for brain model
+        if modelName.lowercased() == "brain" {
+            if let specificAsset = NSDataAsset(name: "Brain") {
+                print("✅ Loading brain model from Brain asset")
                 
-                // Get all child nodes and handle the first one
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("brain.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ Extracted brain model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ Failed to extract brain model: \(error)")
+                }
+            }
+        } else {
+            // For other models, use the existing code
+            let assetName = modelName
+            if let specificAsset = NSDataAsset(name: assetName) {
+                print("✅ Loading specific asset for \(modelName): \(assetName)")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ Extracted model from specific asset to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ Failed to extract model from specific asset: \(error)")
+                }
+            } else {
+                print("❌ Could not find NSDataAsset named: \(assetName) for model: \(modelName)")
+            }
+        }
+            
+        // Check if model exists in the 3D Models directory if not found in assets
+        if modelURL == nil, let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+            if fileManager.fileExists(atPath: potentialModelURL.path) {
+                print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
+                modelURL = potentialModelURL
+            } else {
+                print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+            }
+        }
+        
+        // Check if model exists in base directory
+        if modelURL == nil, let bundle = Bundle.main.resourceURL {
+            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+            if fileManager.fileExists(atPath: potentialModelURL.path) {
+                print("✅ Found model in base directory: \(potentialModelURL.path)")
+                modelURL = potentialModelURL
+            } else {
+                print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+            }
+        }
+        
+        // Load the model if found
+        if let modelURL = modelURL {
+            do {
+                print("✅ Loading model from URL: \(modelURL.path)")
+                let modelScene = try SCNScene(url: modelURL, options: nil)
+                print("✅ Successfully created SCNScene from URL")
+                
                 if let modelNode = modelScene.rootNode.childNodes.first {
                     // Create a pivot node for centered rotation
                     let pivotNode = SCNNode()
                     scene.rootNode.addChildNode(pivotNode)
                     
-                    // Scale model appropriately for the card preview
+                    // Scale model appropriately
                     let scale: Float = 0.12
                     modelNode.scale = SCNVector3(scale, scale, scale)
                     
                     // Position model at center 
                     modelNode.position = SCNVector3(0, 0, 0)
-                    pivotNode.position = SCNVector3(0, 0, -1.2) // Move pivot away from camera
+                    pivotNode.position = SCNVector3(0, 0, -1.2)
                     
-                    // Set proper initial orientation based on request
-                    if modelName == "brain" {
-                        // Match brain orientation exactly with second screenshot
+                    // Set proper initial orientation based on model type
+                    if modelName.lowercased() == "brain" {
                         modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
-                        
-                        // Scale brain model slightly larger to match lungs height
                         modelNode.scale = SCNVector3(scale * 1.15, scale * 1.15, scale * 1.15)
-                        
-                        // For brain model, move it slightly leftward to prevent escaping frame during rotation
                         pivotNode.position = SCNVector3(-0.15, 0, -1.35)
-                        
-                        // Apply rotation to pivot node (same as lungs) instead of the model itself
-                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40) // Same speed as lungs in card preview
-                        let repeatAction = SCNAction.repeatForever(rotationAction)
-                        pivotNode.runAction(repeatAction)
-                    } else if modelName.contains("healthyvsmoker") || 
-                              modelName.contains("smokerlung") || 
-                              modelName.contains("healthylung") {
-                        // Invert lungs (flip upside down from current position)
+                    } else if modelName.lowercased().contains("lung") {
+                        // Invert lungs (flip upside down)
                         modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-                        
-                        // Add rotation animation for visibility - around Y axis only
-                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40) // Standard preview rotation speed
-                        let repeatAction = SCNAction.repeatForever(rotationAction)
-                        pivotNode.runAction(repeatAction)
                     }
+                    
+                    // Add rotation animation
+                    let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
+                    let repeatAction = SCNAction.repeatForever(rotationAction)
+                    pivotNode.runAction(repeatAction)
                     
                     // Add model to pivot node
                     pivotNode.addChildNode(modelNode)
+                    print("✅ Successfully loaded model: \(modelName)")
                     
-                    print("Successfully loaded model: \(modelName)")
+                    // Successfully loaded the model - return without creating fallback
+                    return scene
                 } else {
-                    print("No child nodes found in model: \(modelName)")
-                    addFallbackShape(to: scene)
+                    print("❌ No child nodes found in model: \(modelName)")
                 }
             } catch {
-                print("Error loading model: \(error.localizedDescription)")
-                addFallbackShape(to: scene)
+                print("❌ Error loading model: \(error.localizedDescription)")
             }
         } else {
-            print("Could not find model URL for: \(modelName)")
-            addFallbackShape(to: scene)
+            print("❌ Could not find model URL for: \(modelName)")
         }
         
-        // Add enhanced lighting for better visibility
+        // If we get here, use fallback shape
+        print("⚠️ Using fallback shape for model: \(modelName)")
+        addFallbackShape(to: scene)
+        
+        // Add lighting
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
         ambientLight.light?.intensity = 1000
-        ambientLight.light?.color = UIColor.white
         scene.rootNode.addChildNode(ambientLight)
         
         let directionalLight = SCNNode()
@@ -782,137 +892,527 @@ struct EnhancedModelPreview: View {
     }
     
     private func addFallbackShape(to scene: SCNScene) {
-        let geometry: SCNGeometry
+        print("Creating fallback model for: \(modelName)")
+        let modelNode = SCNNode()
         
-        if modelName == "brain" {
-            geometry = SCNSphere(radius: 0.5)
-            geometry.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
-        } else {
-            // For lungs, create a simple pair of spheres
-            let node = SCNNode()
+        switch modelName {
+        case "brain":
+            // Create brain-like geometry
+            let brainSphere = SCNSphere(radius: 0.5)
+            brainSphere.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
+            brainSphere.firstMaterial?.specular.contents = UIColor.white
+            brainSphere.firstMaterial?.roughness.contents = 0.2
             
-            let leftLung = SCNSphere(radius: 0.4)
-            leftLung.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
-            let leftNode = SCNNode(geometry: leftLung)
-            leftNode.position = SCNVector3(-0.3, 0, 0)
+            let brainNode = SCNNode(geometry: brainSphere)
+            modelNode.addChildNode(brainNode)
             
-            let rightLung = SCNSphere(radius: 0.4)
-            rightLung.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
-            let rightNode = SCNNode(geometry: rightLung)
-            rightNode.position = SCNVector3(0.3, 0, 0)
+            // Add stem
+            let stemCylinder = SCNCylinder(radius: 0.1, height: 0.3)
+            stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
             
-            node.addChildNode(leftNode)
-            node.addChildNode(rightNode)
-            scene.rootNode.addChildNode(node)
-            return
+            let stemNode = SCNNode(geometry: stemCylinder)
+            stemNode.position = SCNVector3(0, -0.6, 0)
+            stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
+            modelNode.addChildNode(stemNode)
+            
+            // Position and rotate the brain
+            modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
+            
+        case "healthylung", "smokerlung":
+            // Create a pair of lungs
+            let isHealthy = modelName == "healthylung"
+            let color = isHealthy ? 
+                UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0) : 
+                UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+            
+            // Right lung
+            let rightLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            rightLung.firstMaterial?.diffuse.contents = color
+            let rightLungNode = SCNNode(geometry: rightLung)
+            rightLungNode.position = SCNVector3(0.3, 0, 0)
+            rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
+            modelNode.addChildNode(rightLungNode)
+            
+            // Left lung
+            let leftLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            leftLung.firstMaterial?.diffuse.contents = color
+            let leftLungNode = SCNNode(geometry: leftLung)
+            leftLungNode.position = SCNVector3(-0.3, 0, 0)
+            leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
+            modelNode.addChildNode(leftLungNode)
+            
+            // Add trachea
+            let trachea = SCNCylinder(radius: 0.08, height: 0.4)
+            trachea.firstMaterial?.diffuse.contents = UIColor.white
+            let tracheaNode = SCNNode(geometry: trachea)
+            tracheaNode.position = SCNVector3(0, 0.55, 0)
+            modelNode.addChildNode(tracheaNode)
+            
+            // Set the lungs orientation
+            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+            
+        case "healthyvsmokerlung":
+            // Create healthy lung
+            let healthyLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
+            let healthyLungNode = SCNNode(geometry: healthyLung)
+            healthyLungNode.position = SCNVector3(0.5, 0, 0)
+            modelNode.addChildNode(healthyLungNode)
+            
+            // Create smoker's lung
+            let smokerLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+            let smokerLungNode = SCNNode(geometry: smokerLung)
+            smokerLungNode.position = SCNVector3(-0.5, 0, 0)
+            modelNode.addChildNode(smokerLungNode)
+            
+            // Set the lungs orientation
+            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+            
+        case "cigarette":
+            // Create cigarette model
+            let filter = SCNCylinder(radius: 0.04, height: 0.2)
+            filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
+            let filterNode = SCNNode(geometry: filter)
+            filterNode.position = SCNVector3(0, -0.3, 0)
+            modelNode.addChildNode(filterNode)
+            
+            let tobacco = SCNCylinder(radius: 0.04, height: 0.4)
+            tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
+            let tobaccoNode = SCNNode(geometry: tobacco)
+            tobaccoNode.position = SCNVector3(0, 0, 0)
+            modelNode.addChildNode(tobaccoNode)
+            
+            let ash = SCNCone(topRadius: 0.01, bottomRadius: 0.04, height: 0.1)
+            ash.firstMaterial?.diffuse.contents = UIColor.darkGray
+            let ashNode = SCNNode(geometry: ash)
+            ashNode.position = SCNVector3(0, 0.25, 0)
+            modelNode.addChildNode(ashNode)
+            
+        default:
+            // Create a default cube
+            let box = SCNBox(width: 0.5, height: 0.5, length: 0.5, chamferRadius: 0.05)
+            box.firstMaterial?.diffuse.contents = UIColor.orange
+            let boxNode = SCNNode(geometry: box)
+            modelNode.addChildNode(boxNode)
         }
         
-        let node = SCNNode(geometry: geometry)
-        scene.rootNode.addChildNode(node)
+        // Create a pivot node for rotation
+        let pivotNode = SCNNode()
+        pivotNode.position = SCNVector3(0, 0, -1.2)
+        
+        // Add the model to the pivot
+        pivotNode.addChildNode(modelNode)
+        
+        // Add auto-rotation action
+        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
+        let repeatAction = SCNAction.repeatForever(rotationAction)
+        pivotNode.runAction(repeatAction)
+        
+        // Add to scene
+        scene.rootNode.addChildNode(pivotNode)
+        
+        print("Added fallback model for: \(modelName)")
     }
 }
 
-struct CompactRecoveryTimeline: View {
-    let recoverySteps: [(timeframe: String, description: String, color: Color)]
+struct EnhancedLargeModelView: View {
+    let modelName: String
+    
+    @State private var resetTrigger = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("Recovery Timeline")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-            
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(recoverySteps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 14) {
-                        // Timeline dot and line
-                        VStack(spacing: 0) {
-                            // Dot
-                            Circle()
-                                .fill(step.color)
-                                .frame(width: 14, height: 14)
-                                .background(
-                                    Circle()
-                                        .stroke(step.color.opacity(0.3), lineWidth: 2)
-                                        .frame(width: 20, height: 20)
-                                )
-                            
-                            // Line to next item (except for last item)
-                            if index < recoverySteps.count - 1 {
-                                Rectangle()
-                                    .fill(step.color.opacity(0.3))
-                                    .frame(width: 2, height: 40)
-                            }
-                        }
-                        .frame(width: 20)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(step.timeframe)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(step.color)
-                            
-                            Text(step.description)
-                                .font(.system(size: 15))
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.bottom, index < recoverySteps.count - 1 ? 20 : 0)
-                        }
-                    }
-                    .padding(.leading, 8)
-                }
-            }
-            .padding(.vertical, 20)
-            .padding(.horizontal, 16)
+        ZStack(alignment: .topTrailing) {
+            // Use SceneView with allowsCameraControl option for rotation
+            SceneView(
+                scene: createEnhancedLargeScene(), 
+                options: [.autoenablesDefaultLighting, .allowsCameraControl],
+                preferredFramesPerSecond: 60
+            )
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.1)]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
             )
-            .padding(.horizontal)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .id(resetTrigger)
+            
+            // Reset button with blue styling
+            Button(action: {
+                resetTrigger.toggle()
+            }) {
+                Image(systemName: "arrow.counterclockwise.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.blue.opacity(0.8))
+                    .padding(8)
+                    .background(Circle().fill(Color.white.opacity(0.9)))
+                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+            }
+            .padding(16)
         }
+    }
+    
+    private func createEnhancedLargeScene() -> SCNScene {
+        let scene = SCNScene()
+        print("🔍 Attempting to load large model: \(modelName)")
+        
+        // Try to find the model file
+        var modelURL: URL?
+        let fileManager = FileManager.default
+        
+        // First try specific asset for this model - use brain-specific handling for brain model
+        if modelName.lowercased() == "brain" {
+            if let specificAsset = NSDataAsset(name: "Brain") {
+                print("✅ Loading brain model from Brain asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("brain.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ Extracted brain model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ Failed to extract brain model: \(error)")
+                }
+            }
+        } else {
+            // For other models, use the existing code
+            let assetName = modelName
+            if let specificAsset = NSDataAsset(name: assetName) {
+                print("✅ Loading specific asset for \(modelName): \(assetName)")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ Extracted model from specific asset to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ Failed to extract model from specific asset: \(error)")
+                }
+            } else {
+                print("❌ Could not find NSDataAsset named: \(assetName) for model: \(modelName)")
+            }
+        }
+            
+        // Check if model exists in the 3D Models directory if not found in assets
+        if modelURL == nil, let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+            if fileManager.fileExists(atPath: potentialModelURL.path) {
+                print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
+                modelURL = potentialModelURL
+            } else {
+                print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+            }
+        }
+        
+        // Check if model exists in base directory
+        if modelURL == nil, let bundle = Bundle.main.resourceURL {
+            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+            if fileManager.fileExists(atPath: potentialModelURL.path) {
+                print("✅ Found model in base directory: \(potentialModelURL.path)")
+                modelURL = potentialModelURL
+            } else {
+                print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+            }
+        }
+        
+        // Load the model if found
+        if let modelURL = modelURL {
+            do {
+                print("✅ Loading model from URL: \(modelURL.path)")
+                let modelScene = try SCNScene(url: modelURL, options: nil)
+                print("✅ Successfully created SCNScene from URL")
+                
+                if let modelNode = modelScene.rootNode.childNodes.first {
+                    // Create a pivot node for centered rotation
+                    let pivotNode = SCNNode()
+                    scene.rootNode.addChildNode(pivotNode)
+                    
+                    // Scale model appropriately for larger view
+                    let scale: Float = 0.15
+                    modelNode.scale = SCNVector3(scale, scale, scale)
+                    
+                    // Position model at center 
+                    modelNode.position = SCNVector3(0, 0, 0)
+                    pivotNode.position = SCNVector3(0, 0, -1.2)
+                    
+                    // Set proper initial orientation based on model type
+                    if modelName.lowercased() == "brain" {
+                        modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
+                        modelNode.scale = SCNVector3(scale * 1.15, scale * 1.15, scale * 1.15)
+                        pivotNode.position = SCNVector3(-0.15, 0, -1.35)
+                    } else if modelName.lowercased().contains("lung") {
+                        // Invert lungs (flip upside down)
+                        modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+                    }
+                    
+                    // Add rotation animation
+                    let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
+                    let repeatAction = SCNAction.repeatForever(rotationAction)
+                    pivotNode.runAction(repeatAction)
+                    
+                    // Add model to pivot node
+                    pivotNode.addChildNode(modelNode)
+                    print("✅ Successfully loaded model: \(modelName)")
+                    
+                    // Successfully loaded the model - return without creating fallback
+                    return scene
+                } else {
+                    print("❌ No child nodes found in model: \(modelName)")
+                }
+            } catch {
+                print("❌ Error loading model: \(error.localizedDescription)")
+            }
+        } else {
+            print("❌ Could not find model URL for: \(modelName)")
+        }
+        
+        // If we get here, use fallback shape
+        print("⚠️ Using fallback shape for model: \(modelName)")
+        addFallbackShape(to: scene)
+        
+        // Add enhanced lighting for better visibility
+        let ambientLight = SCNNode()
+        ambientLight.light = SCNLight()
+        ambientLight.light?.type = .ambient
+        ambientLight.light?.intensity = 1000
+        scene.rootNode.addChildNode(ambientLight)
+        
+        let directionalLight = SCNNode()
+        directionalLight.light = SCNLight()
+        directionalLight.light?.type = .directional
+        directionalLight.light?.intensity = 1400
+        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
+        scene.rootNode.addChildNode(directionalLight)
+        
+        let backLight = SCNNode()
+        backLight.light = SCNLight()
+        backLight.light?.type = .directional
+        backLight.light?.intensity = 1200
+        backLight.position = SCNVector3(x: -5, y: 0, z: -5)
+        scene.rootNode.addChildNode(backLight)
+        
+        return scene
+    }
+    
+    private func addFallbackShape(to scene: SCNScene) {
+        print("Creating fallback model for: \(modelName)")
+        let modelNode = SCNNode()
+        
+        switch modelName {
+        case "brain":
+            // Create brain-like geometry
+            let brainSphere = SCNSphere(radius: 0.5)
+            brainSphere.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
+            brainSphere.firstMaterial?.specular.contents = UIColor.white
+            brainSphere.firstMaterial?.roughness.contents = 0.2
+            
+            let brainNode = SCNNode(geometry: brainSphere)
+            modelNode.addChildNode(brainNode)
+            
+            // Add stem
+            let stemCylinder = SCNCylinder(radius: 0.1, height: 0.3)
+            stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
+            
+            let stemNode = SCNNode(geometry: stemCylinder)
+            stemNode.position = SCNVector3(0, -0.6, 0)
+            stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
+            modelNode.addChildNode(stemNode)
+            
+            // Position and rotate the brain
+            modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
+            
+        case "healthylung", "smokerlung":
+            // Create a pair of lungs
+            let isHealthy = modelName == "healthylung"
+            let color = isHealthy ? 
+                UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0) : 
+                UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+            
+            // Right lung
+            let rightLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            rightLung.firstMaterial?.diffuse.contents = color
+            let rightLungNode = SCNNode(geometry: rightLung)
+            rightLungNode.position = SCNVector3(0.3, 0, 0)
+            rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
+            modelNode.addChildNode(rightLungNode)
+            
+            // Left lung
+            let leftLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            leftLung.firstMaterial?.diffuse.contents = color
+            let leftLungNode = SCNNode(geometry: leftLung)
+            leftLungNode.position = SCNVector3(-0.3, 0, 0)
+            leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
+            modelNode.addChildNode(leftLungNode)
+            
+            // Add trachea
+            let trachea = SCNCylinder(radius: 0.08, height: 0.4)
+            trachea.firstMaterial?.diffuse.contents = UIColor.white
+            let tracheaNode = SCNNode(geometry: trachea)
+            tracheaNode.position = SCNVector3(0, 0.55, 0)
+            modelNode.addChildNode(tracheaNode)
+            
+            // Set the lungs orientation
+            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+            
+        case "healthyvsmokerlung":
+            // Create healthy lung
+            let healthyLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
+            let healthyLungNode = SCNNode(geometry: healthyLung)
+            healthyLungNode.position = SCNVector3(0.5, 0, 0)
+            modelNode.addChildNode(healthyLungNode)
+            
+            // Create smoker's lung
+            let smokerLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+            let smokerLungNode = SCNNode(geometry: smokerLung)
+            smokerLungNode.position = SCNVector3(-0.5, 0, 0)
+            modelNode.addChildNode(smokerLungNode)
+            
+            // Set the lungs orientation
+            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+            
+        case "cigarette":
+            // Create cigarette model
+            let filter = SCNCylinder(radius: 0.04, height: 0.2)
+            filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
+            let filterNode = SCNNode(geometry: filter)
+            filterNode.position = SCNVector3(0, -0.3, 0)
+            modelNode.addChildNode(filterNode)
+            
+            let tobacco = SCNCylinder(radius: 0.04, height: 0.4)
+            tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
+            let tobaccoNode = SCNNode(geometry: tobacco)
+            tobaccoNode.position = SCNVector3(0, 0, 0)
+            modelNode.addChildNode(tobaccoNode)
+            
+            let ash = SCNCone(topRadius: 0.01, bottomRadius: 0.04, height: 0.1)
+            ash.firstMaterial?.diffuse.contents = UIColor.darkGray
+            let ashNode = SCNNode(geometry: ash)
+            ashNode.position = SCNVector3(0, 0.25, 0)
+            modelNode.addChildNode(ashNode)
+            
+        default:
+            // Create a default cube
+            let box = SCNBox(width: 0.5, height: 0.5, length: 0.5, chamferRadius: 0.05)
+            box.firstMaterial?.diffuse.contents = UIColor.orange
+            let boxNode = SCNNode(geometry: box)
+            modelNode.addChildNode(boxNode)
+        }
+        
+        // Create a pivot node for rotation
+        let pivotNode = SCNNode()
+        pivotNode.position = SCNVector3(0, 0, -1.2)
+        
+        // Add the model to the pivot
+        pivotNode.addChildNode(modelNode)
+        
+        // Add auto-rotation action
+        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 40)
+        let repeatAction = SCNAction.repeatForever(rotationAction)
+        pivotNode.runAction(repeatAction)
+        
+        // Add to scene
+        scene.rootNode.addChildNode(pivotNode)
+        
+        print("Added fallback model for: \(modelName)")
     }
 }
 
-struct LungsImpactDetailView: View {
-    @State private var selectedTab = 0
-    @State private var showComparison = false
+struct ImpactInfoCard: View {
+    let title: String
+    let description: String
+    let iconName: String
+    let color: Color
     
-    let lungsRecoverySteps = [
-        (timeframe: "24-48 hours", description: "Carbon monoxide levels in blood drop to normal. Oxygen levels increase.", color: Color.green),
-        (timeframe: "2-3 weeks", description: "Lung function begins to improve. Breathing becomes easier.", color: Color.green),
-        (timeframe: "1-9 months", description: "Cilia in lungs regrow, improving ability to clear mucus and reduce infections.", color: Color.blue),
-        (timeframe: "10 years", description: "Risk of lung cancer drops to about half that of a smoker.", color: Color.purple)
-    ]
+    var body: some View {
+        HStack(alignment: .top, spacing: 15) {
+            // Enhanced icon with background circle
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 46, height: 46)
+                
+                Image(systemName: iconName)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+            }
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(color)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
+        )
+        .padding(.horizontal)
+    }
+}
+
+// Enhanced lungs impact detail view
+struct EnhancedLungsImpactDetailView: View {
+    @State private var selectedSegment = 0
+    @State private var showComparison = false
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Model display section with improved design
-                VStack {
+            VStack(alignment: .leading, spacing: 20) {
+                // Model preview section with segmented control and comparison
+                VStack(spacing: 0) {
                     if showComparison {
-                        // Comparison model
+                        // Comparison view title
                         Text("Healthy vs Smoker's Lungs")
                             .font(.headline)
-                            .padding(.top)
+                            .padding(.top, 16)
                         
-                        EnhancedLargeModelView(modelName: "healthyvsmokerlung")
+                        // Comparison model
+                        EnhancedLargeModelView(modelName: "HealthyVSSmokerLung")
                             .frame(height: 300)
                             .padding()
                     } else {
-                        // Individual lung models based on selected tab with improved design
-                        Picker("Lung Type", selection: $selectedTab) {
+                        // Individual lung view with segment control
+                        Picker("Lung Type", selection: $selectedSegment) {
                             Text("Healthy").tag(0)
                             Text("Smoker").tag(1)
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding(.horizontal)
-                        .padding(.top)
+                        .padding(.top, 16)
                         
-                        EnhancedLargeModelView(modelName: selectedTab == 0 ? "healthylung" : "smokerlung")
+                        // Model display based on selection
+                        EnhancedLargeModelView(modelName: selectedSegment == 0 ? "HealthyLung" : "SmokerLung")
                             .frame(height: 300)
                             .padding()
                     }
                     
+                    // Toggle button between individual and comparison view
                     Button(action: {
                         withAnimation {
                             showComparison.toggle()
@@ -926,9 +1426,9 @@ struct LungsImpactDetailView: View {
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.red)
-                                    .shadow(color: Color.red.opacity(0.4), radius: 5, x: 0, y: 3)
                             )
                             .padding(.horizontal)
+                            .padding(.bottom, 16)
                     }
                 }
                 .background(
@@ -974,11 +1474,10 @@ struct LungsImpactDetailView: View {
                 }
                 .padding(.top)
                 
-                // New compact recovery timeline
+                // Recovery timeline
                 CompactRecoveryTimeline(recoverySteps: lungsRecoverySteps)
                     .padding(.top)
             }
-            .padding(.bottom, 50)
         }
     }
 }
@@ -1295,257 +1794,72 @@ struct NeurotransmitterBar: View {
     }
 }
 
-struct EnhancedLargeModelView: View {
-    let modelName: String
-    
-    @State private var resetTrigger = false
+struct CompactRecoveryTimeline: View {
+    let recoverySteps: [(timeframe: String, description: String, color: Color)]
     
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            // Use SceneView with allowsCameraControl option for rotation
-            SceneView(
-                scene: createEnhancedLargeScene(), 
-                options: [.autoenablesDefaultLighting, .allowsCameraControl],
-                preferredFramesPerSecond: 60
-            )
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Recovery Timeline")
+                .font(.title2)
+                .fontWeight(.bold)
+                .padding(.horizontal)
+            
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(recoverySteps.enumerated()), id: \.offset) { index, step in
+                    HStack(alignment: .top, spacing: 14) {
+                        // Timeline dot and line
+                        VStack(spacing: 0) {
+                            // Dot
+                            Circle()
+                                .fill(step.color)
+                                .frame(width: 14, height: 14)
+                                .background(
+                                    Circle()
+                                        .stroke(step.color.opacity(0.3), lineWidth: 2)
+                                        .frame(width: 20, height: 20)
+                                )
+                            
+                            // Line to next item (except for last item)
+                            if index < recoverySteps.count - 1 {
+                                Rectangle()
+                                    .fill(step.color.opacity(0.3))
+                                    .frame(width: 2, height: 40)
+                            }
+                        }
+                        .frame(width: 20)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(step.timeframe)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(step.color)
+                            
+                            Text(step.description)
+                                .font(.system(size: 15))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.bottom, index < recoverySteps.count - 1 ? 20 : 0)
+                        }
+                    }
+                    .padding(.leading, 8)
+                }
+            }
+            .padding(.vertical, 20)
+            .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.1)]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .fill(Color.white)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
             )
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-            .id(resetTrigger) // Force view refresh on reset
-            
-            // Reset button with improved design
-            Button(action: {
-                resetTrigger.toggle()
-            }) {
-                Image(systemName: "arrow.counterclockwise.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.blue.opacity(0.8))
-                    .padding(8)
-                    .background(Circle().fill(Color.white.opacity(0.9)))
-                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
-            }
-            .padding(16)
+            .padding(.horizontal)
         }
-    }
-    
-    private func createEnhancedLargeScene() -> SCNScene {
-        let scene = SCNScene()
-        
-        // Try the approach that works for cigarette model
-        if let modelURL = Bundle.main.url(forResource: modelName, withExtension: "usdz") {
-            print("Found large model with plain name at: \(modelURL)")
-            
-            do {
-                let modelScene = try SCNScene(url: modelURL, options: nil)
-                
-                // Get all child nodes and handle the first one
-                if let modelNode = modelScene.rootNode.childNodes.first {
-                    // Create a pivot node for centered rotation
-                    let pivotNode = SCNNode()
-                    scene.rootNode.addChildNode(pivotNode)
-                    
-                    // Scale model appropriately
-                    let scale: Float = 0.15
-                    modelNode.scale = SCNVector3(scale, scale, scale)
-                    
-                    // Position model at center for good visibility
-                    modelNode.position = SCNVector3(0, 0, 0)
-                    pivotNode.position = SCNVector3(0, 0, -1.2) // Move pivot away from camera
-                    
-                    // Set proper initial orientation based on request
-                    if modelName == "brain" {
-                        // Match brain orientation exactly with second screenshot
-                        modelNode.eulerAngles = SCNVector3(Float.pi/6 + Float.pi, Float.pi/2, -Float.pi/4 - Float.pi/6)
-                        // For brain model, move it slightly leftward to prevent escaping frame during rotation
-                        pivotNode.position = SCNVector3(-0.15, 0, -1.35)
-                        
-                        // Apply rotation to pivot node (same as lungs) instead of the model itself
-                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 120) // Slower rotation for detailed view
-                        let repeatAction = SCNAction.repeatForever(rotationAction)
-                        pivotNode.runAction(repeatAction)
-                    } else if modelName.contains("healthyvsmoker") || 
-                              modelName.contains("smokerlung") || 
-                              modelName.contains("healthylung") {
-                        // Invert lungs (flip upside down from current position)
-                        modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
-                        
-                        // Add very slow rotation animation for subtle movement
-                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: 120) // Slow rotation for detailed view
-                        let repeatAction = SCNAction.repeatForever(rotationAction)
-                        pivotNode.runAction(repeatAction)
-                    }
-                    
-                    // Add model to pivot node
-                    pivotNode.addChildNode(modelNode)
-                    
-                    print("Successfully loaded large model: \(modelName)")
-                } else {
-                    print("No child nodes found in large model: \(modelName)")
-                    addFallbackShape(to: scene)
-                }
-            } catch {
-                print("Error loading large model: \(error.localizedDescription)")
-                addFallbackShape(to: scene)
-            }
-        } else {
-            print("Could not find large model URL for: \(modelName)")
-            addFallbackShape(to: scene)
-        }
-        
-        // Enhanced lighting
-        let ambientLight = SCNNode()
-        ambientLight.light = SCNLight()
-        ambientLight.light?.type = .ambient
-        ambientLight.light?.intensity = 1400
-        scene.rootNode.addChildNode(ambientLight)
-        
-        let directionalLight = SCNNode()
-        directionalLight.light = SCNLight()
-        directionalLight.light?.type = .directional
-        directionalLight.light?.intensity = 1800
-        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
-        scene.rootNode.addChildNode(directionalLight)
-        
-        let backLight = SCNNode()
-        backLight.light = SCNLight()
-        backLight.light?.type = .directional
-        backLight.light?.intensity = 1400
-        backLight.position = SCNVector3(x: -5, y: 0, z: -5)
-        scene.rootNode.addChildNode(backLight)
-        
-        return scene
-    }
-    
-    private func addFallbackShape(to scene: SCNScene) {
-        let geometry: SCNGeometry
-        
-        if modelName == "brain" {
-            geometry = SCNSphere(radius: 0.5)
-            geometry.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
-        } else if modelName.contains("healthy") && modelName.contains("smoker") {
-            // For comparison view, create both side by side
-            let node = SCNNode()
-            
-            // Healthy lungs (left side)
-            let healthyLeft = SCNSphere(radius: 0.4)
-            healthyLeft.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
-            let healthyLeftNode = SCNNode(geometry: healthyLeft)
-            healthyLeftNode.position = SCNVector3(-0.8, 0, 0)
-            
-            let healthyRight = SCNSphere(radius: 0.4)
-            healthyRight.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
-            let healthyRightNode = SCNNode(geometry: healthyRight)
-            healthyRightNode.position = SCNVector3(-0.2, 0, 0)
-            
-            // Smoker lungs (right side)
-            let smokerLeft = SCNSphere(radius: 0.4)
-            smokerLeft.firstMaterial?.diffuse.contents = UIColor.gray.withAlphaComponent(0.8)
-            let smokerLeftNode = SCNNode(geometry: smokerLeft)
-            smokerLeftNode.position = SCNVector3(0.2, 0, 0)
-            
-            let smokerRight = SCNSphere(radius: 0.4)
-            smokerRight.firstMaterial?.diffuse.contents = UIColor.gray.withAlphaComponent(0.8)
-            let smokerRightNode = SCNNode(geometry: smokerRight)
-            smokerRightNode.position = SCNVector3(0.8, 0, 0)
-            
-            node.addChildNode(healthyLeftNode)
-            node.addChildNode(healthyRightNode)
-            node.addChildNode(smokerLeftNode)
-            node.addChildNode(smokerRightNode)
-            scene.rootNode.addChildNode(node)
-            return
-        } else if modelName.contains("smoker") {
-            // For smoker lungs
-            let node = SCNNode()
-            
-            let leftLung = SCNSphere(radius: 0.4)
-            leftLung.firstMaterial?.diffuse.contents = UIColor.gray.withAlphaComponent(0.8)
-            let leftNode = SCNNode(geometry: leftLung)
-            leftNode.position = SCNVector3(-0.3, 0, 0)
-            
-            let rightLung = SCNSphere(radius: 0.4)
-            rightLung.firstMaterial?.diffuse.contents = UIColor.gray.withAlphaComponent(0.8)
-            let rightNode = SCNNode(geometry: rightLung)
-            rightNode.position = SCNVector3(0.3, 0, 0)
-            
-            node.addChildNode(leftNode)
-            node.addChildNode(rightNode)
-            scene.rootNode.addChildNode(node)
-            return
-        } else {
-            // For healthy lungs
-            let node = SCNNode()
-            
-            let leftLung = SCNSphere(radius: 0.4)
-            leftLung.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
-            let leftNode = SCNNode(geometry: leftLung)
-            leftNode.position = SCNVector3(-0.3, 0, 0)
-            
-            let rightLung = SCNSphere(radius: 0.4)
-            rightLung.firstMaterial?.diffuse.contents = UIColor.blue.withAlphaComponent(0.8)
-            let rightNode = SCNNode(geometry: rightLung)
-            rightNode.position = SCNVector3(0.3, 0, 0)
-            
-            node.addChildNode(leftNode)
-            node.addChildNode(rightNode)
-            scene.rootNode.addChildNode(node)
-            return
-        }
-        
-        let node = SCNNode(geometry: geometry)
-        scene.rootNode.addChildNode(node)
     }
 }
 
-struct ImpactInfoCard: View {
-    let title: String
-    let description: String
-    let iconName: String
-    let color: Color
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 15) {
-            // Enhanced icon with background circle
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: 46, height: 46)
-                
-                Image(systemName: iconName)
-                    .font(.system(size: 22))
-                    .foregroundColor(color)
-            }
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(color)
-                
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
-        .padding(.horizontal)
-    }
-}
+// Add this before the EnhancedLungsImpactDetailView struct
+let lungsRecoverySteps = [
+    (timeframe: "24-48 hours", description: "Carbon monoxide levels in blood drop to normal. Oxygen levels increase.", color: Color.green),
+    (timeframe: "2-3 weeks", description: "Lung function begins to improve. Breathing becomes easier.", color: Color.green),
+    (timeframe: "1-9 months", description: "Cilia in lungs regrow, improving ability to clear mucus and reduce infections.", color: Color.blue),
+    (timeframe: "10 years", description: "Risk of lung cancer drops to about half that of a smoker.", color: Color.purple)
+]
 

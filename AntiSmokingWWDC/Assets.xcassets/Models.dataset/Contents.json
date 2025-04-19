@@ -1,0 +1,28 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "data" : [
+    {
+      "filename" : "brain.usdz",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "healthylung.usdz",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "smokerlung.usdz",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "healthyvsmokerlung.usdz",
+      "idiom" : "universal"
+    },
+    {
+      "filename" : "cigarette.usdz",
+      "idiom" : "universal"
+    }
+  ]
+} 

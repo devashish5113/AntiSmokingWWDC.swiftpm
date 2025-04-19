@@ -48,7 +48,7 @@ class HealthTracker: ObservableObject {
 }
 
 struct HealthData: Identifiable, Codable {
-    let id = UUID()
+    var id: UUID
     var date: Date
     var cigarettesSmoked: Int
     var meditation: Int // minutes
@@ -57,6 +57,18 @@ struct HealthData: Identifiable, Codable {
     var mood: String
     var triggers: String
     var copingStrategy: String
+    
+    init(id: UUID = UUID(), date: Date, cigarettesSmoked: Int, meditation: Int, exercise: Int, waterGlasses: Int, mood: String, triggers: String, copingStrategy: String) {
+        self.id = id
+        self.date = date
+        self.cigarettesSmoked = cigarettesSmoked
+        self.meditation = meditation
+        self.exercise = exercise
+        self.waterGlasses = waterGlasses
+        self.mood = mood
+        self.triggers = triggers
+        self.copingStrategy = copingStrategy
+    }
 }
 
 struct QuitSmokingView: View {

@@ -16,7 +16,7 @@ let package = Package(
         .iOSApplication(
             name: "AntiSmokingWWDC",
             targets: ["AppModule"],
-            bundleIdentifier: "com.Antismoking.AntiSmokingWWDC",
+            bundleIdentifier: "com.zeptoliquid.AntiSmokingWWDC",
             teamIdentifier: "HN837W3RNR",
             displayVersion: "1.0",
             bundleVersion: "1",
@@ -29,23 +29,24 @@ let package = Package(
             supportedInterfaceOrientations: [
                 .portrait,
                 .landscapeRight,
-                .landscapeLeft,
-                .portraitUpsideDown(.when(deviceFamilies: [.pad]))
+                .landscapeLeft
             ],
-            resources: [
-                .process("AntiSmokingWWDC/3D Models"),
-                .copy("AntiSmokingWWDC/3D Models")
-            ]
+            capabilities: [
+                .camera(purposeString: "This app requires camera access to show 3D models in augmented reality."),
+                .microphone(purposeString: "This app uses the microphone to record your voice."),
+                .photoLibrary(purposeString: "This app uses the photo library to save screenshots of your progress.")
+            ],
+            appCategory: .education
         )
     ],
     targets: [
         .executableTarget(
             name: "AppModule",
-            path: ".",
-            resources: [
-                .process("AntiSmokingWWDC/3D Models"),
-                .copy("AntiSmokingWWDC/3D Models")
-            ]
+            path: "AntiSmokingWWDC"
+//            ,
+//            resources: [
+////                .process("Resources")
+//            ]
         )
     ],
     swiftLanguageVersions: [.version("6")]

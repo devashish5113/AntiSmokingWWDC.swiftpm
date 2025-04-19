@@ -184,8 +184,42 @@ struct CigaretteView: View {
         // Try a few different approaches to load the model
         var modelLoaded = false
         
+        // Approach 0a: Try specific asset for cigarette
+        if let specificAsset = NSDataAsset(name: "Cigarette") {
+            print("✅ Found specific Cigarette asset in asset catalog")
+            
+            // Create a temporary file to extract the model
+            let tempDir = NSTemporaryDirectory()
+            let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("cigarette.usdz")
+            
+            do {
+                try specificAsset.data.write(to: tempFileURL)
+                print("✅ Extracted cigarette from specific asset to temp file: \(tempFileURL.path)")
+                modelLoaded = loadModel(from: tempFileURL, into: scene, approach: "Cigarette Asset")
+            } catch {
+                print("❌ Failed to extract cigarette from specific asset: \(error)")
+            }
+        }
+        
+        // Approach 0b: Try from the combined Models asset
+        if !modelLoaded, let asset = NSDataAsset(name: "Models") {
+            print("✅ Found Models asset in asset catalog")
+            
+            // Create a temporary file to extract the model
+            let tempDir = NSTemporaryDirectory()
+            let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("cigarette.usdz")
+            
+            do {
+                try asset.data.write(to: tempFileURL)
+                print("✅ Extracted cigarette from Models asset to temp file: \(tempFileURL.path)")
+                modelLoaded = loadModel(from: tempFileURL, into: scene, approach: "Models Asset")
+            } catch {
+                print("❌ Failed to extract cigarette from Models asset: \(error)")
+            }
+        }
+        
         // Approach 1: Try with resource name and subdirectory parameter
-        if let modelURL = Bundle.main.url(forResource: "cigarette", withExtension: "usdz", subdirectory: "AntiSmokingWWDC/3D Models") {
+        if !modelLoaded, let modelURL = Bundle.main.url(forResource: "cigarette", withExtension: "usdz", subdirectory: "AntiSmokingWWDC/3D Models") {
             print("Found model at: \(modelURL)")
             modelLoaded = loadModel(from: modelURL, into: scene, approach: "1")
         }
@@ -200,6 +234,19 @@ struct CigaretteView: View {
         if !modelLoaded, let modelURL = Bundle.main.url(forResource: "cigarette", withExtension: "usdz", subdirectory: "3D Models") {
             print("Found model in 3D Models directory: \(modelURL)")
             modelLoaded = loadModel(from: modelURL, into: scene, approach: "3")
+        }
+        
+        // Approach 4: Try documents directory
+        if !modelLoaded {
+            if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                let modelsDirectory = documentsDirectory.appendingPathComponent("3D Models")
+                let fileURL = modelsDirectory.appendingPathComponent("cigarette.usdz")
+                
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    print("Found model in documents directory: \(fileURL.path)")
+                    modelLoaded = loadModel(from: fileURL, into: scene, approach: "Documents")
+                }
+            }
         }
         
         // Fallback to a simple model if all approaches fail
@@ -300,8 +347,19 @@ struct CigaretteView: View {
 }
 
 struct ContentView: View {
+    @State private var selectedTab = 0
+    @State private var showARView = false
+    @State private var selectedModel: String? = nil
+    
+    // Add init to copy models at ContentView creation
+    init() {
+        // Check if we need to copy models to the documents directory
+        ensureModelsAreAvailable()
+    }
+    
     var body: some View {
         TabView {
+            // Home tab
             HomeView()
                 .tabItem {
                     Image(systemName: "house.fill")
@@ -319,6 +377,142 @@ struct ContentView: View {
                     Image(systemName: "heart.fill")
                     Text("Quit Smoking")
                 }
+        }
+    }
+    
+    // Helper function to ensure models are available
+    private func ensureModelsAreAvailable() {
+        // Model files to check for
+        let modelNames = ["brain", "healthylung", "smokerlung", "healthyvsmokerlung", "cigarette"]
+        let fileManager = FileManager.default
+        
+        // Get documents directory path
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("❌ Could not access documents directory")
+            return
+        }
+        
+        // Path to models directory
+        let modelsDirectory = documentsDirectory.appendingPathComponent("3D Models")
+        
+        // Create the directory if it doesn't exist
+        if !fileManager.fileExists(atPath: modelsDirectory.path) {
+            do {
+                try fileManager.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
+                print("✅ Created models directory at: \(modelsDirectory.path)")
+            } catch {
+                print("❌ Failed to create models directory: \(error)")
+                return
+            }
+        }
+        
+        // Check each model and copy it if needed
+        for modelName in modelNames {
+            let destinationURL = modelsDirectory.appendingPathComponent("\(modelName).usdz")
+            
+            // Skip if file already exists in documents directory
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                print("✅ Model \(modelName) already in documents directory")
+                continue
+            }
+            
+            // Try to extract from asset catalog first (most reliable method)
+            if let extractedURL = extractModelFromAsset(modelName: modelName) {
+                do {
+                    try fileManager.copyItem(at: extractedURL, to: destinationURL)
+                    print("✅ Copied model \(modelName) from asset catalog to documents")
+                    continue
+                } catch {
+                    print("❌ Failed to copy model \(modelName) from asset catalog: \(error)")
+                }
+            }
+            
+            // Fallback to traditional methods
+            if let bundleURL = Bundle.main.url(forResource: modelName, withExtension: "usdz") {
+                do {
+                    try fileManager.copyItem(at: bundleURL, to: destinationURL)
+                    print("✅ Copied model \(modelName) from bundle to documents")
+                } catch {
+                    print("❌ Failed to copy model \(modelName) from bundle: \(error)")
+                }
+            } 
+            // Try to find in the app directory directly
+            else {
+                let possiblePaths = [
+                    Bundle.main.bundlePath + "/\(modelName).usdz",
+                    Bundle.main.bundlePath + "/AntiSmokingWWDC/\(modelName).usdz",
+                    Bundle.main.bundlePath + "/AntiSmokingWWDC.swiftpm/AntiSmokingWWDC/\(modelName).usdz"
+                ]
+                
+                var found = false
+                for path in possiblePaths {
+                    if fileManager.fileExists(atPath: path) {
+                        do {
+                            let sourceURL = URL(fileURLWithPath: path)
+                            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                            print("✅ Copied model \(modelName) from \(path) to documents")
+                            found = true
+                            break
+                        } catch {
+                            print("❌ Failed to copy model \(modelName) from \(path): \(error)")
+                        }
+                    }
+                }
+                
+                if !found {
+                    print("❌ Could not find model \(modelName) in app bundle")
+                }
+            }
+        }
+        
+        // Verify models in documents directory
+        print("📄 Models in documents directory:")
+        if let contents = try? fileManager.contentsOfDirectory(atPath: modelsDirectory.path) {
+            for item in contents {
+                print("  - \(item)")
+            }
+        }
+    }
+    
+    // Helper function to extract a 3D model from the asset catalog
+    private func extractModelFromAsset(modelName: String) -> URL? {
+        // First try to find a specific asset for this model
+        let assetName = modelName.prefix(1).uppercased() + modelName.dropFirst()
+        if let specificAsset = NSDataAsset(name: assetName) {
+            print("✅ Found specific asset for \(modelName): \(assetName)")
+            
+            // Create a temporary file
+            let tempDir = NSTemporaryDirectory()
+            let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
+            
+            do {
+                try specificAsset.data.write(to: tempFileURL)
+                print("✅ Successfully extracted \(modelName) from specific asset")
+                return tempFileURL
+            } catch {
+                print("❌ Failed to extract \(modelName) from specific asset: \(error)")
+            }
+        } else {
+            print("ℹ️ No specific asset found for \(modelName), trying combined Models asset")
+        }
+        
+        // Fall back to the combined Models asset
+        guard let asset = NSDataAsset(name: "Models") else {
+            print("❌ Models asset not found in asset catalog")
+            return nil
+        }
+        
+        // Create a temporary file
+        let tempDir = NSTemporaryDirectory()
+        let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
+        
+        do {
+            try asset.data.write(to: tempFileURL)
+            print("✅ Successfully extracted \(modelName) from Models asset")
+            return tempFileURL
+        } catch {
+            print("❌ Failed to extract \(modelName) from asset: \(error)")
+            return nil
         }
     }
 }
