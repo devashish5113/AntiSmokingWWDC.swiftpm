@@ -7,8 +7,8 @@ An interactive educational app that visualizes the devastating effects of smokin
 Despite widespread knowledge about smoking's harmful effects, millions continue this habit. This app aims to create a stronger impact by visualizing the actual damage to vital organs in 3D, helping users understand the true extent of smoking's impact and supporting them through the quitting process.
 
 <div align="center">
-  <img src="screenshots/1. Onboarding_screen.PNG" width="380" alt="Onboarding Screen" style="margin-right: 20px;">
-  <img src="screenshots/2. Home_screen.PNG" width="380" alt="Home Screen">
+  <img src="screenshots/1. Onboarding_screen.PNG" width="320" alt="Onboarding Screen" style="margin-right: 20px;">
+  <img src="screenshots/2. Home_screen.PNG" width="320" alt="Home Screen">
 </div>
 
 ## Key Features
