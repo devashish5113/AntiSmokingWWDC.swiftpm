@@ -100,8 +100,8 @@ struct ARModelCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 12) {
                 ZStack(alignment: .topTrailing) {
-                    // Model preview
-                    EnhancedModelPreview(modelName: model.id, cardColor: .blue)
+                    // Model preview without reset button
+                    ARModelPreview(modelName: model.id)
                         .frame(height: 140)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     
@@ -134,12 +134,376 @@ struct ARModelCard: View {
             .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
-        .onAppear {
-            // debugModelPaths call removed
-        }
+    }
+}
+
+// AR-specific model preview without reset button
+struct ARModelPreview: View {
+    let modelName: String
+    
+    var body: some View {
+        // Scene view with model
+        SceneView(
+            scene: createARPreviewScene(),
+            options: [.autoenablesDefaultLighting, .allowsCameraControl],
+            preferredFramesPerSecond: 60
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    // Helper function to debug model loading has been removed
+    private func createARPreviewScene() -> SCNScene {
+        let scene = SCNScene()
+        print("🔍 Attempting to load AR preview model: \(modelName)")
+        
+        // Try to find the model file
+        var modelURL: URL?
+        let fileManager = FileManager.default
+        
+        // First check for specific asset for each model type
+        switch modelName.lowercased() {
+        case "brain":
+            if let specificAsset = NSDataAsset(name: "Brain") {
+                print("✅ AR Preview: Loading brain model from Brain asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("brain.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted brain model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract brain model: \(error)")
+                }
+            }
+        case "healthylung":
+            if let specificAsset = NSDataAsset(name: "HealthyLung") {
+                print("✅ AR Preview: Loading healthy lung model from asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("healthylung.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted healthy lung model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract healthy lung model: \(error)")
+                }
+            }
+        case "smokerlung":
+            if let specificAsset = NSDataAsset(name: "SmokerLung") {
+                print("✅ AR Preview: Loading smoker's lung model from asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("smokerlung.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted smoker's lung model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract smoker's lung model: \(error)")
+                }
+            }
+        case "healthyvsmokerlung":
+            if let specificAsset = NSDataAsset(name: "HealthyVSSmokerLung") {
+                print("✅ AR Preview: Loading comparison lung model from asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("healthyvsmokerlung.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted comparison lung model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract comparison lung model: \(error)")
+                }
+            }
+        case "cigarette":
+            if let specificAsset = NSDataAsset(name: "Cigarette") {
+                print("✅ AR Preview: Loading cigarette model from asset")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("cigarette.usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted cigarette model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract cigarette model: \(error)")
+                }
+            }
+        default:
+            // Try to load model with exact name
+            if let specificAsset = NSDataAsset(name: modelName) {
+                print("✅ AR Preview: Loading model from asset with exact name: \(modelName)")
+                
+                // Create a temporary file
+                let tempDir = NSTemporaryDirectory()
+                let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName.lowercased()).usdz")
+                
+                do {
+                    try specificAsset.data.write(to: tempFileURL)
+                    print("✅ AR Preview: Extracted model to temp file: \(tempFileURL.path)")
+                    modelURL = tempFileURL
+                } catch {
+                    print("❌ AR Preview: Failed to extract model: \(error)")
+                }
+            }
+        }
+        
+        // If still no model URL, try direct loading from Bundle
+        if modelURL == nil {
+            modelURL = Bundle.main.url(forResource: modelName, withExtension: "usdz")
+        }
+        
+        // Check if model exists in the 3D Models directory if not found in assets
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+                let modelFileName = "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ AR Preview: Found model in 3D Models directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ AR Preview: Could not find model in 3D Models directory: \(potentialModelURL.path)")
+                }
+            }
+        }
+        
+        // Check if model exists in base directory
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL {
+                let modelFileName = "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ AR Preview: Found model in base directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ AR Preview: Could not find model in base directory: \(potentialModelURL.path)")
+                }
+            }
+        }
+        
+        // Load the model if found
+        if let modelURL = modelURL {
+            do {
+                print("✅ Loading model from URL: \(modelURL.path)")
+                let modelScene = try SCNScene(url: modelURL, options: nil)
+                print("✅ Successfully created SCNScene from URL")
+                
+                if let modelNode = modelScene.rootNode.childNodes.first {
+                    // Create a pivot node for centered rotation
+                    let pivotNode = SCNNode()
+                    scene.rootNode.addChildNode(pivotNode)
+                    
+                    // Scale model appropriately
+                    let scale: Float = 0.12
+                    modelNode.scale = SCNVector3(scale, scale, scale)
+                    
+                    // Position model at center
+                    modelNode.position = SCNVector3(0, 0, 0)
+                    pivotNode.position = SCNVector3(0, 0, -1.2)
+                    
+                    // Set proper initial orientation based on model type
+                    if modelName.lowercased() == "brain" {
+                        // Update brain orientation to match the screenshot - stem visible at bottom with left tilt
+                        modelNode.eulerAngles = SCNVector3(0, Float.pi * 0.5, Float.pi * 0.15)
+                        // Increase scale for better visibility in AR
+                        modelNode.scale = SCNVector3(0.005, 0.005, 0.005)
+                        // Slightly offset the brain position to look better in AR
+                        pivotNode.position.y += 0.05
+                    } else if modelName.lowercased().contains("lung") {
+                        // Invert lungs (flip upside down)
+                        modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+                    }
+                    
+                    // Add rotation animation with home tab's speed
+                    let rotationDuration: TimeInterval = 40 // Match home tab speed
+                    let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: rotationDuration)
+                    let repeatAction = SCNAction.repeatForever(rotationAction)
+                    pivotNode.runAction(repeatAction)
+                    
+                    // Add model to pivot node
+                    pivotNode.addChildNode(modelNode)
+                    print("✅ Successfully loaded model: \(modelName)")
+                    
+                    // Successfully loaded the model - return without creating fallback
+                    return scene
+                } else {
+                    print("❌ No child nodes found in model: \(modelName)")
+                }
+            } catch {
+                print("❌ Error loading model: \(error.localizedDescription)")
+            }
+        } else {
+            print("❌ Could not find model URL for: \(modelName)")
+        }
+        
+        // If we get here, create a procedural model instead of using fallback shapes
+        print("⚠️ Creating procedural model for: \(modelName)")
+        createProceduralModel(for: modelName, in: scene)
+        
+        // Add lighting
+        let ambientLight = SCNNode()
+        ambientLight.light = SCNLight()
+        ambientLight.light?.type = .ambient
+        ambientLight.light?.intensity = 1000
+        scene.rootNode.addChildNode(ambientLight)
+        
+        let directionalLight = SCNNode()
+        directionalLight.light = SCNLight()
+        directionalLight.light?.type = .directional
+        directionalLight.light?.intensity = 1400
+        directionalLight.position = SCNVector3(x: 5, y: 5, z: 5)
+        scene.rootNode.addChildNode(directionalLight)
+        
+        let backLight = SCNNode()
+        backLight.light = SCNLight()
+        backLight.light?.type = .directional
+        backLight.light?.intensity = 1200
+        backLight.position = SCNVector3(x: -5, y: 0, z: -5)
+        scene.rootNode.addChildNode(backLight)
+        
+        return scene
+    }
+    
+    private func createProceduralModel(for modelName: String, in scene: SCNScene) {
+        let modelNode = SCNNode()
+        let pivotNode = SCNNode()
+        scene.rootNode.addChildNode(pivotNode)
+        pivotNode.position = SCNVector3(0, 0, -1.2)
+        
+        switch modelName {
+        case "brain":
+            // Create brain-like geometry
+            let brainSphere = SCNSphere(radius: 0.5)
+            brainSphere.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
+            brainSphere.firstMaterial?.specular.contents = UIColor.white
+            brainSphere.firstMaterial?.roughness.contents = 0.2
+            
+            let brainNode = SCNNode(geometry: brainSphere)
+            modelNode.addChildNode(brainNode)
+            
+            // Add stem
+            let stemCylinder = SCNCylinder(radius: 0.1, height: 0.3)
+            stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
+            
+            let stemNode = SCNNode(geometry: stemCylinder)
+            stemNode.position = SCNVector3(0, -0.6, 0)
+            stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
+            modelNode.addChildNode(stemNode)
+            
+            // Position and rotate the brain - exactly like in homeView
+            modelNode.eulerAngles = SCNVector3(0, Float.pi * 0.5, Float.pi * 0.15)
+            modelNode.position = SCNVector3(0, 0, 0)
+            // Move the pivot closer to camera and scale the brain model
+            pivotNode.position = SCNVector3(0, 0, -1.0)
+            modelNode.scale = SCNVector3(1.2, 1.2, 1.2)
+            
+        case "healthylung":
+            // Create a pair of lungs
+            createLungModel(in: modelNode, isHealthy: true)
+            
+        case "smokerlung":
+            // Create a smoker's lungs
+            createLungModel(in: modelNode, isHealthy: false)
+            
+        case "healthyvsmokerlung":
+            // Create healthy lung 
+            let healthyLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
+            let healthyLungNode = SCNNode(geometry: healthyLung)
+            healthyLungNode.position = SCNVector3(0.5, 0, 0)
+            modelNode.addChildNode(healthyLungNode)
+            
+            // Create smoker's lung
+            let smokerLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+            smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+            let smokerLungNode = SCNNode(geometry: smokerLung)
+            smokerLungNode.position = SCNVector3(-0.5, 0, 0)
+            modelNode.addChildNode(smokerLungNode)
+            
+            // Set the lungs orientation
+            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+            
+        case "cigarette":
+            // Create cigarette model
+            let filter = SCNCylinder(radius: 0.04, height: 0.2)
+            filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
+            let filterNode = SCNNode(geometry: filter)
+            filterNode.position = SCNVector3(0, -0.3, 0)
+            modelNode.addChildNode(filterNode)
+            
+            let tobacco = SCNCylinder(radius: 0.04, height: 0.4)
+            tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
+            let tobaccoNode = SCNNode(geometry: tobacco)
+            tobaccoNode.position = SCNVector3(0, 0, 0)
+            modelNode.addChildNode(tobaccoNode)
+            
+            let ash = SCNCone(topRadius: 0.01, bottomRadius: 0.04, height: 0.1)
+            ash.firstMaterial?.diffuse.contents = UIColor.darkGray
+            let ashNode = SCNNode(geometry: ash)
+            ashNode.position = SCNVector3(0, 0.25, 0)
+            modelNode.addChildNode(ashNode)
+            
+        default:
+            // Create a default cube
+            let box = SCNBox(width: 0.1, height: 0.1, length: 0.1, chamferRadius: 0.01)
+            box.firstMaterial?.diffuse.contents = UIColor.blue
+            let boxNode = SCNNode(geometry: box)
+            modelNode.addChildNode(boxNode)
+        }
+        
+        // Add rotation animation with home tab's speed
+        let rotationDuration: TimeInterval = 40 // Match home tab speed
+        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: rotationDuration)
+        let repeatAction = SCNAction.repeatForever(rotationAction)
+        pivotNode.runAction(repeatAction)
+        
+        // Add model to pivot node
+        pivotNode.addChildNode(modelNode)
+    }
+    
+    private func createLungModel(in parentNode: SCNNode, isHealthy: Bool) {
+        let color = isHealthy ? 
+            UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0) : 
+            UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        
+        // Right lung
+        let rightLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+        rightLung.firstMaterial?.diffuse.contents = color
+        let rightLungNode = SCNNode(geometry: rightLung)
+        rightLungNode.position = SCNVector3(0.3, 0, 0)
+        rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
+        parentNode.addChildNode(rightLungNode)
+        
+        // Left lung
+        let leftLung = SCNCapsule(capRadius: 0.25, height: 0.7)
+        leftLung.firstMaterial?.diffuse.contents = color
+        let leftLungNode = SCNNode(geometry: leftLung)
+        leftLungNode.position = SCNVector3(-0.3, 0, 0)
+        leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
+        parentNode.addChildNode(leftLungNode)
+        
+        // Add trachea
+        let trachea = SCNCylinder(radius: 0.08, height: 0.4)
+        trachea.firstMaterial?.diffuse.contents = UIColor.white
+        let tracheaNode = SCNNode(geometry: trachea)
+        tracheaNode.position = SCNVector3(0, 0.55, 0)
+        parentNode.addChildNode(tracheaNode)
+        
+        // Set the lungs orientation
+        parentNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+    }
 }
 
 // AR instructions card
@@ -302,158 +666,15 @@ struct SceneKitARModelViewer: UIViewRepresentable {
         private func placeModel(at anchorNode: SCNNode) {
             guard let arView = arView, let modelName = modelName else { return }
             
-            // Try loading model from file
-            let loadedModel = loadModelFromFile(modelName: modelName, anchorNode: anchorNode)
-            
-            // If file loading failed, create a procedural model
-            if !loadedModel {
-                print("AR: Creating procedural model for \(modelName)")
-                createProceduralModel(modelName: modelName, anchorNode: anchorNode)
-            }
-        }
-        
-        @MainActor
-        private func createProceduralModel(modelName: String, anchorNode: SCNNode) {
-            guard let arView = arView else { return }
-            
-            let modelNode = SCNNode()
-            
-            switch modelName {
-            case "brain":
-                // Create brain-like geometry
-                let brainSphere = SCNSphere(radius: 0.05)
-                brainSphere.firstMaterial?.diffuse.contents = UIColor.red.withAlphaComponent(0.8)
-                brainSphere.firstMaterial?.specular.contents = UIColor.white
-                
-                // Add wrinkle-like texture
-                let material = brainSphere.firstMaterial!
-                material.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-                material.normal.contents = UIImage(named: "brain_normal") ?? UIColor.red
-                material.roughness.contents = 0.2
-                
-                let brainNode = SCNNode(geometry: brainSphere)
-                modelNode.addChildNode(brainNode)
-                
-                // Add stem
-                let stemCylinder = SCNCylinder(radius: 0.01, height: 0.03)
-                stemCylinder.firstMaterial?.diffuse.contents = UIColor(red: 0.8, green: 0.6, blue: 0.6, alpha: 1.0)
-                
-                let stemNode = SCNNode(geometry: stemCylinder)
-                stemNode.position = SCNVector3(0, -0.06, 0)
-                stemNode.eulerAngles = SCNVector3(Float.pi/2, 0, 0)
-                modelNode.addChildNode(stemNode)
-                
-            case "healthylung":
-                // Create healthy lung model
-                let rightLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                rightLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
-                let rightLungNode = SCNNode(geometry: rightLung)
-                rightLungNode.position = SCNVector3(0.03, 0, 0)
-                rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
-                modelNode.addChildNode(rightLungNode)
-                
-                let leftLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                leftLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
-                let leftLungNode = SCNNode(geometry: leftLung)
-                leftLungNode.position = SCNVector3(-0.03, 0, 0)
-                leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
-                modelNode.addChildNode(leftLungNode)
-                
-                // Add trachea
-                let trachea = SCNCylinder(radius: 0.008, height: 0.04)
-                trachea.firstMaterial?.diffuse.contents = UIColor.white
-                let tracheaNode = SCNNode(geometry: trachea)
-                tracheaNode.position = SCNVector3(0, 0.055, 0)
-                modelNode.addChildNode(tracheaNode)
-                
-            case "smokerlung":
-                // Create smoker's lung model (darker color, rougher texture)
-                let rightLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                rightLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-                let rightLungNode = SCNNode(geometry: rightLung)
-                rightLungNode.position = SCNVector3(0.03, 0, 0)
-                rightLungNode.eulerAngles = SCNVector3(0, 0, Float.pi/8)
-                modelNode.addChildNode(rightLungNode)
-                
-                let leftLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                leftLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-                let leftLungNode = SCNNode(geometry: leftLung)
-                leftLungNode.position = SCNVector3(-0.03, 0, 0)
-                leftLungNode.eulerAngles = SCNVector3(0, 0, -Float.pi/8)
-                modelNode.addChildNode(leftLungNode)
-                
-                // Add trachea
-                let trachea = SCNCylinder(radius: 0.008, height: 0.04)
-                trachea.firstMaterial?.diffuse.contents = UIColor.white
-                let tracheaNode = SCNNode(geometry: trachea)
-                tracheaNode.position = SCNVector3(0, 0.055, 0)
-                modelNode.addChildNode(tracheaNode)
-                
-            case "healthyvsmokerlung":
-                // Create healthy lung 
-                let healthyLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                healthyLung.firstMaterial?.diffuse.contents = UIColor(red: 0.9, green: 0.6, blue: 0.6, alpha: 1.0)
-                let healthyLungNode = SCNNode(geometry: healthyLung)
-                healthyLungNode.position = SCNVector3(0.05, 0, 0)
-                modelNode.addChildNode(healthyLungNode)
-                
-                // Create smoker's lung
-                let smokerLung = SCNCapsule(capRadius: 0.025, height: 0.07)
-                smokerLung.firstMaterial?.diffuse.contents = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-                let smokerLungNode = SCNNode(geometry: smokerLung)
-                smokerLungNode.position = SCNVector3(-0.05, 0, 0)
-                modelNode.addChildNode(smokerLungNode)
-                
-            case "cigarette":
-                // Create cigarette model
-                let filter = SCNCylinder(radius: 0.004, height: 0.02)
-                filter.firstMaterial?.diffuse.contents = UIColor(white: 0.9, alpha: 1.0)
-                let filterNode = SCNNode(geometry: filter)
-                filterNode.position = SCNVector3(0, -0.03, 0)
-                modelNode.addChildNode(filterNode)
-                
-                let tobacco = SCNCylinder(radius: 0.004, height: 0.04)
-                tobacco.firstMaterial?.diffuse.contents = UIColor(white: 0.8, alpha: 1.0)
-                let tobaccoNode = SCNNode(geometry: tobacco)
-                tobaccoNode.position = SCNVector3(0, 0, 0)
-                modelNode.addChildNode(tobaccoNode)
-                
-                let ash = SCNCone(topRadius: 0.001, bottomRadius: 0.004, height: 0.01)
-                ash.firstMaterial?.diffuse.contents = UIColor.darkGray
-                let ashNode = SCNNode(geometry: ash)
-                ashNode.position = SCNVector3(0, 0.025, 0)
-                modelNode.addChildNode(ashNode)
-                
-            default:
-                // Create a default cube
-                let box = SCNBox(width: 0.05, height: 0.05, length: 0.05, chamferRadius: 0.005)
-                box.firstMaterial?.diffuse.contents = UIColor.orange
-                let boxNode = SCNNode(geometry: box)
-                modelNode.addChildNode(boxNode)
-            }
-            
-            // Add the model to the anchor node
-            anchorNode.addChildNode(modelNode)
-            
-            // Add the anchor to the scene
-            arView.scene.rootNode.addChildNode(anchorNode)
-            
-            // Store reference
-            placedNode = modelNode
-            
-            print("AR: Successfully created procedural model for: \(modelName)")
-        }
-        
-        @MainActor
-        private func loadModelFromFile(modelName: String, anchorNode: SCNNode) -> Bool {
-            guard let arView = arView else { return false }
-            
-            // Try to find the model file
-            var modelURL: URL?
+            // Initialize FileManager
             let fileManager = FileManager.default
             
-            // First try specific asset for this model - use brain-specific handling for brain model
-            if modelName.lowercased() == "brain" {
+            // Variable to store model URL
+            var modelURL: URL?
+            
+            // First check for specific asset for each model type
+            switch modelName.lowercased() {
+            case "brain":
                 if let specificAsset = NSDataAsset(name: "Brain") {
                     print("✅ AR: Loading brain model from Brain asset")
                     
@@ -469,90 +690,169 @@ struct SceneKitARModelViewer: UIViewRepresentable {
                         print("❌ AR: Failed to extract brain model: \(error)")
                     }
                 }
-            } else {
-                // For other models, use the exact asset name
-                let assetName = modelName
-                if let specificAsset = NSDataAsset(name: assetName) {
-                    print("✅ AR: Loading specific asset for \(modelName): \(assetName)")
+            case "healthylung":
+                if let specificAsset = NSDataAsset(name: "HealthyLung") {
+                    print("✅ AR: Loading healthy lung model from asset")
                     
                     // Create a temporary file
                     let tempDir = NSTemporaryDirectory()
-                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName).usdz")
+                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("healthylung.usdz")
                     
                     do {
                         try specificAsset.data.write(to: tempFileURL)
-                        print("✅ AR: Extracted model from specific asset to temp file: \(tempFileURL.path)")
+                        print("✅ AR: Extracted healthy lung model to temp file: \(tempFileURL.path)")
                         modelURL = tempFileURL
                     } catch {
-                        print("❌ AR: Failed to extract model from specific asset: \(error)")
+                        print("❌ AR: Failed to extract healthy lung model: \(error)")
                     }
-                } else {
-                    print("❌ AR: Could not find NSDataAsset named: \(assetName) for model: \(modelName)")
+                }
+            case "smokerlung":
+                if let specificAsset = NSDataAsset(name: "SmokerLung") {
+                    print("✅ AR: Loading smoker's lung model from asset")
+                    
+                    // Create a temporary file
+                    let tempDir = NSTemporaryDirectory()
+                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("smokerlung.usdz")
+                    
+                    do {
+                        try specificAsset.data.write(to: tempFileURL)
+                        print("✅ AR: Extracted smoker's lung model to temp file: \(tempFileURL.path)")
+                        modelURL = tempFileURL
+                    } catch {
+                        print("❌ AR: Failed to extract smoker's lung model: \(error)")
+                    }
+                }
+            case "healthyvsmokerlung":
+                if let specificAsset = NSDataAsset(name: "HealthyVSSmokerLung") {
+                    print("✅ AR: Loading comparison lung model from asset")
+                    
+                    // Create a temporary file
+                    let tempDir = NSTemporaryDirectory()
+                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("healthyvsmokerlung.usdz")
+                    
+                    do {
+                        try specificAsset.data.write(to: tempFileURL)
+                        print("✅ AR: Extracted comparison lung model to temp file: \(tempFileURL.path)")
+                        modelURL = tempFileURL
+                    } catch {
+                        print("❌ AR: Failed to extract comparison lung model: \(error)")
+                    }
+                }
+            case "cigarette":
+                if let specificAsset = NSDataAsset(name: "Cigarette") {
+                    print("✅ AR: Loading cigarette model from asset")
+                    
+                    // Create a temporary file
+                    let tempDir = NSTemporaryDirectory()
+                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("cigarette.usdz")
+                    
+                    do {
+                        try specificAsset.data.write(to: tempFileURL)
+                        print("✅ AR: Extracted cigarette model to temp file: \(tempFileURL.path)")
+                        modelURL = tempFileURL
+                    } catch {
+                        print("❌ AR: Failed to extract cigarette model: \(error)")
+                    }
+                }
+            default:
+                // Try to load model with exact name
+                if let specificAsset = NSDataAsset(name: modelName) {
+                    print("✅ AR: Loading model from asset with exact name: \(modelName)")
+                    
+                    // Create a temporary file
+                    let tempDir = NSTemporaryDirectory()
+                    let tempFileURL = URL(fileURLWithPath: tempDir).appendingPathComponent("\(modelName.lowercased()).usdz")
+                    
+                    do {
+                        try specificAsset.data.write(to: tempFileURL)
+                        print("✅ AR: Extracted model to temp file: \(tempFileURL.path)")
+                        modelURL = tempFileURL
+                    } catch {
+                        print("❌ AR: Failed to extract model: \(error)")
+                    }
                 }
             }
             
+            // If still no model URL, try direct loading from Bundle
+            if modelURL == nil {
+                modelURL = Bundle.main.url(forResource: modelName, withExtension: "usdz")
+            }
+            
             // Check if model exists in the 3D Models directory if not found in assets
-            if modelURL == nil, let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
-                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-                if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ AR: Found model in 3D Models directory: \(potentialModelURL.path)")
-                    modelURL = potentialModelURL
-                } else {
-                    print("❌ AR: Could not find model in 3D Models directory: \(potentialModelURL.path)")
+            if modelURL == nil {
+                if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+                    let modelFileName = "\(modelName.lowercased()).usdz"
+                    let potentialModelURL = bundlePath.appendingPathComponent(modelFileName)
+                    if fileManager.fileExists(atPath: potentialModelURL.path) {
+                        print("✅ AR: Found model in 3D Models directory: \(potentialModelURL.path)")
+                        modelURL = potentialModelURL
+                    } else {
+                        print("❌ AR: Could not find model in 3D Models directory: \(potentialModelURL.path)")
+                    }
                 }
             }
             
             // Check if model exists in base directory
-            if modelURL == nil, let bundle = Bundle.main.resourceURL {
-                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-                if fileManager.fileExists(atPath: potentialModelURL.path) {
-                    print("✅ AR: Found model in base directory: \(potentialModelURL.path)")
-                    modelURL = potentialModelURL
-                } else {
-                    print("❌ AR: Could not find model in base directory: \(potentialModelURL.path)")
+            if modelURL == nil {
+                if let bundlePath = Bundle.main.resourceURL {
+                    let modelFileName = "\(modelName.lowercased()).usdz"
+                    let potentialModelURL = bundlePath.appendingPathComponent(modelFileName)
+                    if fileManager.fileExists(atPath: potentialModelURL.path) {
+                        print("✅ AR: Found model in base directory: \(potentialModelURL.path)")
+                        modelURL = potentialModelURL
+                    } else {
+                        print("❌ AR: Could not find model in base directory: \(potentialModelURL.path)")
+                    }
                 }
             }
             
-            // Load model if URL was found
             if let modelURL = modelURL {
                 do {
-                    print("✅ AR: Loading model from URL: \(modelURL.path)")
                     let modelScene = try SCNScene(url: modelURL, options: nil)
-                    print("✅ AR: Successfully created SCNScene from URL")
                     
                     // Get the root node of the loaded model
-                    let childNodes = modelScene.rootNode.childNodes
-                    print("AR: Model has \(childNodes.count) child nodes")
-                    
-                    if let modelNode = childNodes.first {
+                    if let modelNode = modelScene.rootNode.childNodes.first {
+                        // Create a pivot node for better control
+                        let pivotNode = SCNNode()
+                        
                         // Adjust scale
                         modelNode.scale = SCNVector3(0.003, 0.003, 0.003)
                         
-                        // Add to anchor
-                        anchorNode.addChildNode(modelNode)
+                        // Add the model to the pivot node
+                        pivotNode.addChildNode(modelNode)
                         
-                        // Add anchor to scene
-                        arView.scene.rootNode.addChildNode(anchorNode)
+                        // Set the pivot node position to the anchor position
+                        pivotNode.position = anchorNode.position
+                        
+                        // Make adjustments based on model type
+                        if modelName.lowercased() == "brain" {
+                            // Update brain orientation to match the screenshot - stem visible at bottom with left tilt
+                            modelNode.eulerAngles = SCNVector3(0, Float.pi * 0.5, Float.pi * 0.15)
+                            // Increase scale for better visibility in AR
+                            modelNode.scale = SCNVector3(0.005, 0.005, 0.005)
+                            // Slightly offset the brain position to look better in AR
+                            pivotNode.position.y += 0.05
+                        } else if modelName.lowercased().contains("lung") {
+                            // Invert lungs (flip upside down)
+                            modelNode.eulerAngles = SCNVector3(-Float.pi/2, 0, 0)
+                        }
+                        
+                        // Add rotation animation with home tab's speed
+                        let rotationDuration: TimeInterval = 40 // Match home tab speed
+                        let rotationAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi * 2), z: 0, duration: rotationDuration)
+                        let repeatAction = SCNAction.repeatForever(rotationAction)
+                        pivotNode.runAction(repeatAction)
+                        
+                        // Add pivot node to the scene
+                        arView.scene.rootNode.addChildNode(pivotNode)
                         
                         // Store reference
-                        placedNode = modelNode
-                        print("✅ AR: Successfully loaded and placed model: \(modelName)")
-                        return true
-                    } else {
-                        print("❌ AR: No child nodes found in model: \(modelName)")
-                        return false
+                        placedNode = pivotNode
                     }
                 } catch {
-                    print("❌ AR: Error loading model: \(error.localizedDescription)")
-                    return false
+                    print("Error loading model: \(error.localizedDescription)")
                 }
-            } else {
-                print("❌ AR: Could not find model URL for: \(modelName)")
-                return false
             }
         }
     }
 }
-

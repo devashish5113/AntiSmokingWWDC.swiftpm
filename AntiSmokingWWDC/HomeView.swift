@@ -789,26 +789,30 @@ struct EnhancedModelPreview: View {
         }
             
         // Check if model exists in the 3D Models directory if not found in assets
-        if modelURL == nil, let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
-            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-            if fileManager.fileExists(atPath: potentialModelURL.path) {
-                print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
-                modelURL = potentialModelURL
-            } else {
-                print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+                }
             }
         }
         
         // Check if model exists in base directory
-        if modelURL == nil, let bundle = Bundle.main.resourceURL {
-            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-            if fileManager.fileExists(atPath: potentialModelURL.path) {
-                print("✅ Found model in base directory: \(potentialModelURL.path)")
-                modelURL = potentialModelURL
-            } else {
-                print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL {
+                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ Found model in base directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+                }
             }
         }
         
@@ -1106,26 +1110,30 @@ struct EnhancedLargeModelView: View {
         }
             
         // Check if model exists in the 3D Models directory if not found in assets
-        if modelURL == nil, let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
-            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-            if fileManager.fileExists(atPath: potentialModelURL.path) {
-                print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
-                modelURL = potentialModelURL
-            } else {
-                print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL?.appendingPathComponent("3D Models") {
+                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ Found model in 3D Models directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ Could not find model in 3D Models directory: \(potentialModelURL.path)")
+                }
             }
         }
         
         // Check if model exists in base directory
-        if modelURL == nil, let bundle = Bundle.main.resourceURL {
-            let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
-            let potentialModelURL = bundle.appendingPathComponent(modelFileName)
-            if fileManager.fileExists(atPath: potentialModelURL.path) {
-                print("✅ Found model in base directory: \(potentialModelURL.path)")
-                modelURL = potentialModelURL
-            } else {
-                print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+        if modelURL == nil {
+            if let bundle = Bundle.main.resourceURL {
+                let modelFileName = modelName.lowercased() == "brain" ? "brain.usdz" : "\(modelName.lowercased()).usdz"
+                let potentialModelURL = bundle.appendingPathComponent(modelFileName)
+                if fileManager.fileExists(atPath: potentialModelURL.path) {
+                    print("✅ Found model in base directory: \(potentialModelURL.path)")
+                    modelURL = potentialModelURL
+                } else {
+                    print("❌ Could not find model in base directory: \(potentialModelURL.path)")
+                }
             }
         }
         
