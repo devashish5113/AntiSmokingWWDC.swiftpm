@@ -1,14 +1,15 @@
-# Smoking Impact Visualizer
+# Anti Smoking App
 
 An interactive educational app that visualizes the devastating effects of smoking on the human body through detailed 3D models and evidence-based information.
-
-<img src="screenshots/2. Home_screen.PNG" width="300" alt="Home Screen">
 
 ## Purpose
 
 Despite widespread knowledge about smoking's harmful effects, millions continue this habit. This app aims to create a stronger impact by visualizing the actual damage to vital organs in 3D, helping users understand the true extent of smoking's impact and supporting them through the quitting process.
 
-<img src="screenshots/1. Onboarding_screen.PNG" width="300" alt="Onboarding Screen">
+<div style="display: flex; justify-content: space-between;">
+  <img src="screenshots/1. Onboarding_screen.PNG" width="300" alt="Onboarding Screen">
+  <img src="screenshots/2. Home_screen.PNG" width="300" alt="Home Screen">
+</div>
 
 ## Key Features
 
