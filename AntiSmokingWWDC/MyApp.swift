@@ -13,6 +13,7 @@ struct SmokeFreeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.dark)
                 .sheet(isPresented: $showOnboarding) {
                     WelcomeView(isPresented: $showOnboarding)
                 }

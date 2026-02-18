@@ -40,7 +40,7 @@ struct DailyStatCard: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color.white.opacity(0.08))
         .cornerRadius(10)
     }
 }
@@ -122,7 +122,7 @@ struct HabitCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.gray.opacity(0.1))
+        .background(Color.white.opacity(0.08))
         .cornerRadius(10)
     }
 }
@@ -150,7 +150,7 @@ struct CopingStrategiesView: View {
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.gray.opacity(0.1))
+                .background(Color.white.opacity(0.08))
                 .cornerRadius(10)
             }
         }

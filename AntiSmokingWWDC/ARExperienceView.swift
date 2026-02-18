@@ -108,7 +108,7 @@ struct ARModelCard: View {
                     // AR badge
                     ZStack {
                         Circle()
-                            .fill(Color.white)
+                            .fill(Color(white: 0.15))
                             .frame(width: 32, height: 32)
                             .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
                         
@@ -129,7 +129,7 @@ struct ARModelCard: View {
                     .lineLimit(2)
             }
             .padding()
-            .background(Color(UIColor.systemBackground))
+            .background(Color(white: 0.12))
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         }
@@ -169,7 +169,7 @@ struct ARInstructionCard: View {
             }
         }
         .padding()
-        .background(Color(UIColor.systemBackground))
+        .background(Color(white: 0.12))
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }

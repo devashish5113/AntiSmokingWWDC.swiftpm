@@ -10,7 +10,7 @@ struct WelcomeView: View {
             // Display the 3D cigarette model
             CigaretteView()
                 .frame(maxHeight: UIScreen.main.bounds.height * 0.65)
-                .background(Color.white)
+                .background(Color.black)
                 .cornerRadius(10)
                 .padding(.top, 10)
             
@@ -96,7 +96,7 @@ struct CigaretteView: View {
                     .font(.system(size: 20))
                     .foregroundColor(.gray.opacity(0.6))
                     .padding(8)
-                    .background(Circle().fill(Color.white.opacity(0.2)))
+                    .background(Circle().fill(Color.black.opacity(0.4)))
             }
             .accessibility(label: Text("Reset View"))
             .padding(.trailing, 10)

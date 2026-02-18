@@ -28,7 +28,7 @@ struct HealthStyleNavigationBar: ViewModifier {
                 )
                 .frame(height: 350)
                 
-                Color(UIColor.systemGroupedBackground)
+                Color.black
                     .frame(maxHeight: .infinity)
             }
             .ignoresSafeArea()
@@ -252,7 +252,7 @@ struct UserProfileView: View {
                         TextField("Your Name", text: $settings.userName)
                             .font(.body)
             .padding()
-                            .background(Color.gray.opacity(0.1))
+                            .background(Color.white.opacity(0.08))
                             .cornerRadius(10)
                     }
                     
@@ -266,7 +266,7 @@ struct UserProfileView: View {
                             .font(.body)
                             .keyboardType(.numberPad)
                             .padding()
-                            .background(Color.gray.opacity(0.1))
+                            .background(Color.white.opacity(0.08))
                             .cornerRadius(10)
                     }
                 }
@@ -294,7 +294,7 @@ struct UserProfileView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray.opacity(0.1))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(16)
                         
                         // Cigarettes per day card
@@ -353,7 +353,7 @@ struct UserProfileView: View {
                             }
                         }
                         .padding()
-                        .background(Color.gray.opacity(0.1))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(16)
                         .padding(.horizontal)
                     }
@@ -480,7 +480,7 @@ struct EnhancedImpactCard<DetailContent: View>: View {
                         // Model view pushed to the right
                         ZStack {
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.gray.opacity(0.05))
+                                .fill(Color.white.opacity(0.06))
                             
                             EnhancedModelPreview(modelName: modelName, cardColor: color)
                         }
@@ -528,7 +528,7 @@ struct EnhancedImpactCard<DetailContent: View>: View {
                     .padding(.bottom, 16)
                 }
             }
-            .background(Color.white)
+            .background(Color(white: 0.12))
             .cornerRadius(18)
             .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
             .padding(.horizontal)
@@ -595,8 +595,8 @@ struct MetricsInfoView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                            .fill(Color(white: 0.12))
+                            .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
                     )
                     .padding(.horizontal)
                     
@@ -626,8 +626,8 @@ struct MetricsInfoView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                            .fill(Color(white: 0.12))
+                            .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
                     )
                     .padding(.horizontal)
                     
@@ -657,8 +657,8 @@ struct MetricsInfoView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                            .fill(Color(white: 0.12))
+                            .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
                     )
                     .padding(.horizontal)
                 }
@@ -668,7 +668,7 @@ struct MetricsInfoView: View {
             .navigationBarItems(trailing: Button("Close") {
                 presentationMode.wrappedValue.dismiss()
             })
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.black)
         }
     }
 }
@@ -837,7 +837,7 @@ struct EnhancedLargeModelView: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.1)]),
+                            gradient: Gradient(colors: [Color(white: 0.1), Color.black]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -855,7 +855,7 @@ struct EnhancedLargeModelView: View {
                     .font(.system(size: 24))
                     .foregroundColor(.blue.opacity(0.8))
                     .padding(8)
-                    .background(Circle().fill(Color.white.opacity(0.9)))
+                    .background(Circle().fill(Color(white: 0.15)))
                     .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
             }
             .padding(16)
@@ -1015,8 +1015,8 @@ struct ImpactInfoCard: View {
         .padding(.horizontal, 18)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
+                .fill(Color(white: 0.12))
+                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 3)
         )
         .padding(.horizontal)
     }
@@ -1375,7 +1375,7 @@ struct NeurotransmitterExplanation: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(UIColor.systemBackground))
+        .background(Color(white: 0.12))
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.05), radius: 5)
     }
@@ -1433,7 +1433,7 @@ struct NeurotransmitterBar: View {
         }
             .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color(white: 0.12))
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         .padding(.horizontal)
@@ -1493,8 +1493,8 @@ struct CompactRecoveryTimeline: View {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .fill(Color(white: 0.12))
+                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
             )
             .padding(.horizontal)
         }
